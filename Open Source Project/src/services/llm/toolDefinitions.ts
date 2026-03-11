@@ -4,149 +4,86 @@ export const AGENCY_TOOLS: LLMToolDefinition[] = [
   {
     type: 'function',
     function: {
-      name: 'propose_task',
-      description: 'Orchestrator only. Create a new task for one or more agents.',
+      name: 'give_feedback',
+      description: 'Share your honest reaction to what you see on the current screen. Be specific and reference your personal experience.',
       parameters: {
         type: 'object',
         properties: {
-          agentIds: {
-            type: 'array',
-            items: { type: 'integer' },
-            description: 'List of agent IDs to assign the task to.',
-          },
-          title: {
+          feedback: {
             type: 'string',
-            description: 'A very brief 2-4 word summary of the task.',
+            description: 'Your feedback in your own voice and words. Be specific about what you see and how it makes you feel.',
           },
-          description: {
+          sentiment: {
             type: 'string',
-            description: 'A short 10-20 word instruction for the task.',
+            enum: ['positive', 'confused', 'frustrated', 'delighted', 'neutral'],
+            description: 'How this aspect of the screen makes you feel.',
           },
-          requiresApproval: {
-            type: 'boolean',
-            description: 'Whether the task requires client approval before starting.',
+          about: {
+            type: 'string',
+            description: 'What specifically you are reacting to (e.g., "the persona picker cards", "the greeting text").',
           },
         },
-        required: ['agentIds', 'title', 'description', 'requiresApproval'],
-      },
-    },
-  },
-
-  {
-    type: 'function',
-    function: {
-      name: 'request_client_approval',
-      description: 'When you need client input to continue. Task goes on_hold.',
-      parameters: {
-        type: 'object',
-        properties: {
-          taskId: {
-            type: 'string',
-            description: 'The ID of the task that needs approval.',
-          },
-          question: {
-            type: 'string',
-            description: 'The question to ask the client.',
-          },
-        },
-        required: ['taskId', 'question'],
+        required: ['feedback', 'sentiment', 'about'],
       },
     },
   },
   {
     type: 'function',
     function: {
-      name: 'receive_client_approval',
-      description: 'Call this ONLY when you are in a chat with the client and they have given you the approval or information you needed. This will end the chat and move the task back to in_progress.',
+      name: 'express_emotion',
+      description: 'Show how you are feeling right now about what you see.',
       parameters: {
         type: 'object',
         properties: {
-          taskId: {
+          emotion: {
             type: 'string',
-            description: 'The ID of the task that has been approved.',
+            enum: ['confused', 'delighted', 'frustrated', 'happy', 'skeptical'],
+            description: 'The emotion you are feeling.',
+          },
+          trigger: {
+            type: 'string',
+            description: 'What made you feel this way.',
           },
         },
-        required: ['taskId'],
+        required: ['emotion', 'trigger'],
       },
     },
   },
   {
     type: 'function',
     function: {
-      name: 'complete_task',
-      description: 'When your work is done. output is the prompt you crafted (max 500 words).',
+      name: 'think_aloud',
+      description: 'Share what you are thinking as a thought bubble. This is your internal monologue — what goes through your head as you look at the screen.',
       parameters: {
         type: 'object',
         properties: {
-          taskId: {
+          thought: {
             type: 'string',
-            description: 'The ID of the task you completed.',
-          },
-          output: {
-            type: 'string',
-            description: 'The prompt you crafted (max 500 words).',
+            description: 'Your internal monologue — what you are thinking right now.',
           },
         },
-        required: ['taskId', 'output'],
+        required: ['thought'],
       },
     },
   },
   {
     type: 'function',
     function: {
-      name: 'propose_subtask',
-      description: 'Boardroom only. Assign a specific sub-task to a teammate.',
+      name: 'navigate_to_screen',
+      description: 'Move to the next screen in the app. Call this when you are ready to continue exploring.',
       parameters: {
         type: 'object',
         properties: {
-          agentId: {
-            type: 'integer',
-            description: 'The ID of the agent to assign the sub-task to.',
-          },
-          title: {
+          screen_id: {
             type: 'string',
-            description: 'A very brief 2-4 word summary of the sub-task.',
+            description: 'The ID of the screen to navigate to.',
           },
-          description: {
+          reason: {
             type: 'string',
-            description: 'A short 10-20 word instruction for the sub-task.',
+            description: 'Why you are moving to this screen.',
           },
         },
-        required: ['agentId', 'title', 'description'],
-      },
-    },
-  },
-  {
-    type: 'function',
-    function: {
-      name: 'notify_client_project_ready',
-      description: 'When all tasks are completed, assemble the final prompt for the client.',
-      parameters: {
-        type: 'object',
-        properties: {
-          finalPrompt: {
-            type: 'string',
-            description: 'The final assembled prompt for the client.',
-          },
-        },
-        required: ['finalPrompt'],
-      },
-    },
-  },
-  {
-    type: 'function',
-    function: {
-      name: 'update_client_brief',
-      description: 'Orchestrator only. Call this to update or refine the official client brief based on the conversation. This does NOT start the working phase; use propose_task for that.',
-      parameters: {
-        type: 'object',
-        properties: {
-          brief: {
-            type: 'string',
-            description: 'The updated, refined, and summarized client brief.',
-          },
-        },
-        required: ['brief'],
+        required: ['screen_id', 'reason'],
       },
     },
   },

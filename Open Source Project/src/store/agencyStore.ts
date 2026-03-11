@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import { LLMMessage } from '../services/llm/types'
+import { FeedbackItem } from '../types'
 import { AgentSet, DEFAULT_AGENT_SET_ID, getAgentSet } from '../data/agents'
 
 export type TaskStatus = 'scheduled' | 'on_hold' | 'in_progress' | 'done'
@@ -51,6 +52,10 @@ interface AgencyState {
   // ── Tasks ────────────────────────────────────────────────────
   tasks: Task[]
 
+  // ── Feedback Sandbox ──────────────────────────────────────────
+  feedbackItems: FeedbackItem[]
+  personaScreens: Record<number, string>
+
   // ── Log ──────────────────────────────────────────────────────
   actionLog: ActionLogEntry[]
   debugLog: DebugLogEntry[]
@@ -83,6 +88,10 @@ interface AgencyState {
   removeTask: (taskId: string) => void;
   updateTaskStatus: (taskId: string, status: TaskStatus) => void;
   setTaskOutput: (taskId: string, output: string) => void;
+
+  // ── Actions — Feedback Sandbox ────────────────────────────────
+  addFeedbackItem: (item: Omit<FeedbackItem, 'id' | 'timestamp'>) => FeedbackItem;
+  setPersonaScreen: (agentIndex: number, screenId: string) => void;
 
   // ── Actions — Log ─────────────────────────────────────────────
   addLogEntry: (entry: Omit<ActionLogEntry, 'id' | 'timestamp'>) => void;
@@ -117,6 +126,8 @@ export const useAgencyStore = create<AgencyState>()(
       phase: 'idle',
       finalOutput: null,
       tasks: [],
+      feedbackItems: [],
+      personaScreens: {},
       actionLog: [],
       debugLog: [],
       agentHistories: {},
@@ -136,6 +147,8 @@ export const useAgencyStore = create<AgencyState>()(
         phase: 'idle',
         finalOutput: null,
         tasks: [],
+        feedbackItems: [],
+        personaScreens: {},
         actionLog: [],
         debugLog: [],
         agentHistories: {},
@@ -146,7 +159,6 @@ export const useAgencyStore = create<AgencyState>()(
         isPaused: false,
       }),
 
-      // ... other actions stay as they are ...
       setClientBrief: (brief) => set({ clientBrief: brief }),
       setPhase: (phase) => set({ phase }),
       setFinalOutput: (output) => set({ finalOutput: output }),
@@ -164,10 +176,7 @@ export const useAgencyStore = create<AgencyState>()(
 
       removeTask: (taskId) =>
         set((s) => {
-          const removedTask = s.tasks.find(t => t.id === taskId);
           const newTasks = s.tasks.filter((t) => t.id !== taskId);
-
-          // Logic to check if removing this task finishes the project
           const hasRemainingTasks = newTasks.some(t => t.status !== 'done');
           const isWorking = s.phase === 'working' || s.phase === 'awaiting_approval';
 
@@ -179,7 +188,6 @@ export const useAgencyStore = create<AgencyState>()(
           return {
             tasks: newTasks,
             phase: nextPhase,
-            // If the pending approval task is removed, clear that as well
             pendingApprovalTaskId: s.pendingApprovalTaskId === taskId ? null : s.pendingApprovalTaskId,
           };
         }),
@@ -188,12 +196,9 @@ export const useAgencyStore = create<AgencyState>()(
         set((s) => {
           const task = s.tasks.find((t) => t.id === taskId);
           if (!task) return {};
-
-          // Safety check: Cannot move back to 'in_progress' or 'on_hold' if already 'done'
           if (task.status === 'done' && (status === 'in_progress' || status === 'on_hold')) {
             return {};
           }
-
           return {
             tasks: s.tasks.map((t) =>
               t.id === taskId ? { ...t, status, updatedAt: Date.now() } : t
@@ -206,6 +211,22 @@ export const useAgencyStore = create<AgencyState>()(
           tasks: s.tasks.map((t) =>
             t.id === taskId ? { ...t, output, updatedAt: Date.now() } : t
           ),
+        })),
+
+      // ── Feedback Sandbox actions ──────────────────────────────
+      addFeedbackItem: (item) => {
+        const newItem: FeedbackItem = {
+          ...item,
+          id: `fb_${uid()}`,
+          timestamp: Date.now(),
+        }
+        set((s) => ({ feedbackItems: [...s.feedbackItems, newItem] }))
+        return newItem
+      },
+
+      setPersonaScreen: (agentIndex, screenId) =>
+        set((s) => ({
+          personaScreens: { ...s.personaScreens, [agentIndex]: screenId },
         })),
 
       addLogEntry: (entry) =>
@@ -271,7 +292,6 @@ export const useAgencyStore = create<AgencyState>()(
       setPaused: (isPaused) => set({ isPaused }),
       togglePauseOnCall: () => set((s) => {
         const nextPauseOnCall = !s.pauseOnCall;
-        // If turning OFF debug mode and we are paused, resume automatically
         if (!nextPauseOnCall && s.isPaused) {
           return { pauseOnCall: nextPauseOnCall, isPaused: false };
         }
@@ -280,11 +300,12 @@ export const useAgencyStore = create<AgencyState>()(
 
       setAgentSet: (id) => set({
         selectedAgentSetId: id,
-        // Reset project state along with the agent set change
         clientBrief: '',
         phase: 'idle',
         finalOutput: null,
         tasks: [],
+        feedbackItems: [],
+        personaScreens: {},
         actionLog: [],
         debugLog: [],
         agentHistories: {},
@@ -296,7 +317,7 @@ export const useAgencyStore = create<AgencyState>()(
       }),
     }),
     {
-      name: 'agency-storage',
+      name: 'ash-sandbox-storage',
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         pauseOnCall: state.pauseOnCall,
