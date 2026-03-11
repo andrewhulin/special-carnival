@@ -18,13 +18,20 @@ export class ToolHandlerService {
 
     switch (fn.name) {
       case 'give_feedback': {
-        const { feedback, sentiment, about } = fn.args as {
+        const { feedback, sentiment, about, screen_name } = fn.args as {
           feedback: string;
           sentiment: 'positive' | 'confused' | 'frustrated' | 'delighted' | 'neutral';
           about: string;
+          screen_name?: string;
         };
 
-        const currentScreen = store.personaScreens[callerIndex] || 'app';
+        // Use screen_name from LLM if provided, fall back to tracked screen
+        const currentScreen = screen_name || store.personaScreens[callerIndex] || 'app';
+
+        // Update the persona's current screen based on what the LLM identified
+        if (screen_name) {
+          store.setPersonaScreen(callerIndex, screen_name);
+        }
 
         store.addFeedbackItem({
           personaIndex: callerIndex,

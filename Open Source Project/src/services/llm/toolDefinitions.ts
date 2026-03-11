@@ -22,8 +22,12 @@ export const AGENCY_TOOLS: LLMToolDefinition[] = [
             type: 'string',
             description: 'What specifically you are reacting to (e.g., "the persona picker cards", "the greeting text").',
           },
+          screen_name: {
+            type: 'string',
+            description: 'A short name for the current screen you are looking at (e.g., "welcome", "persona-picker", "chat", "dashboard", "onboarding"). Use lowercase with hyphens.',
+          },
         },
-        required: ['feedback', 'sentiment', 'about'],
+        required: ['feedback', 'sentiment', 'about', 'screen_name'],
       },
     },
   },

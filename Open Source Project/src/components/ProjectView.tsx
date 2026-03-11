@@ -58,7 +58,7 @@ const ProjectView: React.FC = () => {
 
       <div className="h-px bg-zinc-100 w-full mb-6" />
 
-      {/* Start Simulation */}
+      {/* Start Testing */}
       {phase === 'idle' && (
         <div className="mb-8">
           <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-6 flex flex-col items-center gap-4">
@@ -72,7 +72,7 @@ const ProjectView: React.FC = () => {
               className="flex items-center justify-center gap-2 bg-indigo-500 hover:bg-indigo-600 active:scale-95 text-white px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-sm w-full"
             >
               <Play size={14} strokeWidth={3} />
-              Start Simulation
+              Start Testing
             </button>
           </div>
         </div>
