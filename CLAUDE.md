@@ -31,7 +31,7 @@ npm install
 ### 3. Start the bridge server (Terminal 1)
 ```bash
 cd "Open Source Project"
-npx tsx bridge/server.ts
+npm run bridge
 ```
 Expected output:
 ```
