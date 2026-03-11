@@ -25,12 +25,12 @@ const InfoModal: React.FC<InfoModalProps> = ({ onClose }) => {
           >
             <div className="max-w-md mx-auto">
               <h2 className="text-3xl font-black text-zinc-900 leading-[1.1] mb-6 tracking-tight text-center">
-                What if you could stop prompting & start delegating to a team of AI agents in a living 3D office?
+                Ash Feedback Lab
               </h2>
 
               <div className="space-y-6 text-zinc-500 text-sm leading-relaxed font-medium">
                 <p>
-                  <strong>The Delegation</strong> is an experimental 3D workspace where you stop prompting and start delegating to a team of AI agents with physical presence. Each agent lives and works in a living office, making complex AI processes transparent, collaborative, and human-centered — you see not just the result, but the collective intelligence behind it.
+                  <strong>Ash Feedback Lab</strong> is a playful 3D sandbox where AI persona characters actually use the real Ash app in the iOS Simulator and give character-driven design feedback. Watch them tap, scroll, and react — then review their honest feedback on the dashboard.
                 </p>
               </div>
 
@@ -41,10 +41,6 @@ const InfoModal: React.FC<InfoModalProps> = ({ onClose }) => {
                 >
                   Close
                 </button>
-
-                <p className="text-[9px] font-bold text-zinc-300 uppercase tracking-[0.15em] text-center leading-loose">
-                  An experiment by <a href="https://unboring.net" target="_blank" rel="noopener noreferrer" className="text-zinc-400 hover:text-zinc-900 transition-colors">Arturo Paracuellos</a>
-                </p>
               </div>
             </div>
           </motion.div>

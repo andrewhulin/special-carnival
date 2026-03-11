@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import UIOverlay from './UIOverlay';
 import InspectorPanel from './InspectorPanel';
+import SimulatorCompanion from './SimulatorCompanion';
 import { Play, Pause, Maximize2, Minimize2, Users } from 'lucide-react';
 import { useAgencyStore } from '../store/agencyStore';
 import { useStore } from '../store/useStore';
@@ -98,6 +99,7 @@ const SimulationView: React.FC<SimulationViewProps> = ({ canvasRef, isFullscreen
       </div>
 
       <div ref={canvasRef} className="flex-1 min-h-0 relative overflow-hidden bg-black/5">
+        <SimulatorCompanion />
         <UIOverlay />
         {isFullscreen && selectedNpcIndex !== null && (
           <div className="absolute top-4 right-4 bottom-4 w-96 z-50 pointer-events-none flex flex-col gap-4">

@@ -1,7 +1,7 @@
-# Ash Feedback Sandbox
+# Ash Feedback Lab
 
 ## Project Overview
-Hackathon project transforming "The Delegation" (3D office simulation with LLM agents) into the **Ash Feedback Sandbox** — where AI persona characters explore the Ash Flutter mental health app in a 3D environment and give realistic, character-driven design feedback.
+**Ash Feedback Lab** — a playful 3D sandbox where AI persona characters use the real Ash app in the iOS Simulator and give character-driven design feedback. The web app (Three.js 3D office) serves as the observation/feedback dashboard.
 
 ## How to Run
 ```bash
@@ -22,11 +22,12 @@ npm run dev
 - **3D Engine:** `Open Source Project/src/three/`
 
 ## Architecture Notes
-- 3 personas (Gloria, Marcus, Priya) mapped into `AgentData` interface for compatibility
-- Personas explore 5 static Ash app screens via LLM tool calls
-- 4 tools: give_feedback, express_emotion, think_aloud, navigate_to_screen
-- Feedback board (repurposed Kanban) organized by screen name
-- Gemini API via BYOK (Bring Your Own Key)
+- 3 persona sets (Interview Insights, Edge Cases, Accessibility Focus) with picker at startup
+- Personas interact with the real Ash app in iOS Simulator via bridge server (Express :3001)
+- Claude Vision analyzes screenshots to decide what to tap/type/scroll
+- 6 tools: give_feedback, express_emotion, think_aloud, tap_screen, type_text, scroll
+- Feedback board (Kanban) organized by screen name
+- Claude API via BYOK (Bring Your Own Key) with Vite proxy
 
 ## Error Log
 <!-- Record every bug fix below with date, description, and resolution -->

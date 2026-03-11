@@ -32,7 +32,7 @@ function renderPersonaTag(agentIndex: number) {
         className="w-1.5 h-1.5 rounded-full shrink-0"
         style={{ backgroundColor: agent.color }}
       />
-      {agent.role}
+      {agent.role} <span className="text-zinc-400">&middot;</span> {agent.department}
     </span>
   )
 }

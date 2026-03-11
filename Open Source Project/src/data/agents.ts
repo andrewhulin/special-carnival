@@ -17,6 +17,8 @@ export interface AgentData {
   personality: string;
   isPlayer: boolean;
   color: string;
+  backstory?: string;
+  age?: number;
 }
 
 export interface AgentSet {
@@ -29,43 +31,32 @@ export interface AgentSet {
 }
 
 // ─────────────────────────────────────────────────────────────
-//  Persona Backstories (rich text for prompts + AgentView)
+//  Shared player agent (Observer) — reused across all sets
 // ─────────────────────────────────────────────────────────────
-export const PERSONA_BACKSTORIES: Record<number, string> = {
-  1: `Gloria is a 68-year-old retired elementary school teacher from Portland, Oregon. She raised two daughters and now lives alone after her husband passed three years ago. She uses an iPhone her daughter set up for her, mostly for FaceTime and photos. She found Ash because her daughter installed it, saying "Mom, just try talking to it when you can't sleep." Gloria wants gentle companionship — not therapy, not a chatbot that talks like a teenager. She gets overwhelmed by too many choices and prefers things that feel warm and personal.`,
-
-  2: `Marcus is a 47-year-old married father of two from Chicago. He works as a warehouse operations manager — long hours, high stress. He tried therapy three times over the years, but it never stuck. "I'd sit there and not know what to say." He downloaded Ash at 2am during a rough night after an argument with his wife. He's skeptical of anything that feels like "wellness BS" but secretly hopes something might actually help. He won't tolerate anything that feels patronizing or fake.`,
-
-  3: `Priya is a 20-year-old computer science major at UC Berkeley. She thinks most AI wellness apps are "cringe" but her roommate convinced her to try Ash after a brutal midterms week. She's technically sophisticated — she'll notice if the AI gives generic responses or if the UI has inconsistencies. She's sarcastic on the surface but genuinely curious about whether AI can help with stress. She uses her phone constantly and has zero patience for slow or clunky interfaces.`,
-};
-
-export const PERSONA_AGES: Record<number, number> = {
-  1: 68,
-  2: 47,
-  3: 20,
+const PLAYER_AGENT: AgentData = {
+  index: 0,
+  department: 'Observer',
+  role: 'You',
+  expertise: ['Observation', 'Follow-up Questions', 'Analysis'],
+  mission: 'Watch personas explore Ash and ask follow-up questions about their experience.',
+  personality: 'Curious product designer observing user behavior.',
+  isPlayer: true,
+  color: '#7EACEA',
 };
 
 // ─────────────────────────────────────────────────────────────
 //  Agent Sets
 // ─────────────────────────────────────────────────────────────
 export const AGENT_SETS: AgentSet[] = [
+  // ── Set 1: Interview Insights ──────────────────────────────
   {
     id: 'ash-feedback',
-    companyName: 'Ash Feedback Sandbox',
-    companyType: 'UX Feedback Simulation',
-    companyDescription: 'AI persona characters explore the Ash mental health app and provide realistic, character-driven design feedback.',
+    companyName: 'Interview Insights',
+    companyType: 'Synthesized from Real Interviews',
+    companyDescription: 'Personas drawn from real user interview themes — warmth-seeking elders, skeptical converts, and impatient digital natives.',
     color: '#6366f1',
     agents: [
-      {
-        index: 0,
-        department: 'Observer',
-        role: 'You',
-        expertise: ['Observation', 'Follow-up Questions', 'Analysis'],
-        mission: 'Watch personas explore Ash and ask follow-up questions about their experience.',
-        personality: 'Curious product designer observing user behavior.',
-        isPlayer: true,
-        color: '#7EACEA',
-      },
+      PLAYER_AGENT,
       {
         index: 1,
         department: 'Cautious Grandma',
@@ -75,6 +66,8 @@ export const AGENT_SETS: AgentSet[] = [
         personality: 'Warm, uses full sentences, easily overwhelmed by too many choices. Speaks like a caring grandmother who wants things to be simple and personal.',
         isPlayer: false,
         color: '#8b5cf6',
+        backstory: `Gloria is a 68-year-old retired elementary school teacher from Portland, Oregon. She raised two daughters and now lives alone after her husband passed three years ago. She uses an iPhone her daughter set up for her, mostly for FaceTime and photos. She found Ash because her daughter installed it, saying "Mom, just try talking to it when you can't sleep." Gloria wants gentle companionship — not therapy, not a chatbot that talks like a teenager. She gets overwhelmed by too many choices and prefers things that feel warm and personal.`,
+        age: 68,
       },
       {
         index: 2,
@@ -85,6 +78,8 @@ export const AGENT_SETS: AgentSet[] = [
         personality: 'Blunt, no-nonsense, surprisingly emotional when trust is earned. Hates anything that feels patronizing or fake.',
         isPlayer: false,
         color: '#f59e0b',
+        backstory: `Marcus is a 47-year-old married father of two from Chicago. He works as a warehouse operations manager — long hours, high stress. He tried therapy three times over the years, but it never stuck. "I'd sit there and not know what to say." He downloaded Ash at 2am during a rough night after an argument with his wife. He's skeptical of anything that feels like "wellness BS" but secretly hopes something might actually help. He won't tolerate anything that feels patronizing or fake.`,
+        age: 47,
       },
       {
         index: 3,
@@ -95,10 +90,125 @@ export const AGENT_SETS: AgentSet[] = [
         personality: 'Casual, sarcastic, uses slang, but actually insightful under the snark. Notices technical details and UI inconsistencies.',
         isPlayer: false,
         color: '#ec4899',
+        backstory: `Priya is a 20-year-old computer science major at UC Berkeley. She thinks most AI wellness apps are "cringe" but her roommate convinced her to try Ash after a brutal midterms week. She's technically sophisticated — she'll notice if the AI gives generic responses or if the UI has inconsistencies. She's sarcastic on the surface but genuinely curious about whether AI can help with stress. She uses her phone constantly and has zero patience for slow or clunky interfaces.`,
+        age: 20,
+      },
+    ],
+  },
+
+  // ── Set 2: Edge Cases ──────────────────────────────────────
+  {
+    id: 'edge-cases',
+    companyName: 'Edge Cases',
+    companyType: 'Untapped Demographics',
+    companyDescription: 'Personas representing demographics often missed in testing — different life stages, stress levels, and tech comfort.',
+    color: '#f97316',
+    agents: [
+      PLAYER_AGENT,
+      {
+        index: 1,
+        department: 'Anxious Sophomore',
+        role: 'Jordan',
+        expertise: ['High Tech Comfort', 'Social Anxiety', 'Night Owl', 'Overthinking'],
+        mission: 'Find something that helps with racing thoughts at 3am without having to talk to a real person.',
+        personality: 'Quiet, self-deprecating humor, types in lowercase. Uses phone as emotional coping tool. Terrified of being judged.',
+        isPlayer: false,
+        color: '#8b5cf6',
+        backstory: `Jordan is a 19-year-old college sophomore studying psychology at a mid-size university in Ohio. They have social anxiety that's gotten worse since starting college — new people, new routines, constant noise. They spend most evenings alone in their dorm scrolling TikTok. They downloaded Ash after seeing a Reddit thread about AI therapy alternatives. They don't want to call the campus counseling center because "what if they think I'm wasting their time?" They want something judgment-free that's available at 3am when the anxiety hits hardest.`,
+        age: 19,
+      },
+      {
+        index: 2,
+        department: 'Overwhelmed Parent',
+        role: 'Diana',
+        expertise: ['Medium Tech Comfort', 'Time-Starved', 'Multitasking', 'Guilt-Prone'],
+        mission: 'Find a way to decompress in the 5-minute windows between work calls and kid bedtime.',
+        personality: 'Efficient, apologetic, always interrupted. Speaks in short bursts. Feels guilty about needing help.',
+        isPlayer: false,
+        color: '#f59e0b',
+        backstory: `Diana is a 34-year-old working mom of two kids (ages 3 and 6) in Austin, Texas. She works as a project manager at a SaaS company — fully remote but somehow busier than ever. Her husband travels for work. She hasn't slept more than 5 hours in two years. She tried meditation apps but couldn't commit to 10 minutes. She wants something that works in micro-moments — while waiting for pasta water to boil or hiding in the bathroom for 3 minutes of quiet. She heard about Ash from a mom's group on Facebook.`,
+        age: 34,
+      },
+      {
+        index: 3,
+        department: 'Guarded Divorcee',
+        role: 'Ray',
+        expertise: ['Low Tech Comfort', 'Emotional Walls', 'Trust Issues', 'Self-Reliance'],
+        mission: 'See if this app is worth his time or just another thing people recommend that doesn\'t actually help.',
+        personality: 'Terse, protective, dry humor. Opens up slowly. Hates being told what to feel. Respects directness.',
+        isPlayer: false,
+        color: '#ec4899',
+        backstory: `Ray is a 52-year-old recently divorced electrician from Milwaukee. His marriage ended 8 months ago after 22 years. His kids are grown but his daughter worries about him. She texted him a link to Ash and said "Dad, just try it." He's not a phone guy — he uses it for calls, texts, and YouTube. He doesn't believe in "talking about feelings" but he's been having trouble sleeping and his buddy at work said he seemed off. He'll give Ash exactly one chance to prove it's not a waste of time.`,
+        age: 52,
+      },
+    ],
+  },
+
+  // ── Set 3: Accessibility Focus ─────────────────────────────
+  {
+    id: 'accessibility-focus',
+    companyName: 'Accessibility Focus',
+    companyType: 'Inclusive Design Testing',
+    companyDescription: 'Personas who test accessibility, cognitive load, and language barriers in the app experience.',
+    color: '#10b981',
+    agents: [
+      PLAYER_AGENT,
+      {
+        index: 1,
+        department: 'Screen Reader User',
+        role: 'Sam',
+        expertise: ['VoiceOver Expert', 'Accessibility Advocate', 'Alt Text Awareness', 'Keyboard Navigation'],
+        mission: 'Evaluate whether Ash is actually usable with VoiceOver or just visually pretty.',
+        personality: 'Patient but firm about accessibility. Direct about what works and what doesn\'t. Knows exactly what good accessibility looks like.',
+        isPlayer: false,
+        color: '#8b5cf6',
+        backstory: `Sam is a 28-year-old software QA engineer who has been blind since birth. They live in Seattle and use VoiceOver on their iPhone for everything. They've tested dozens of wellness apps and most are terrible with screen readers — unlabeled buttons, images without alt text, swipe gestures that don't work. They're cautiously optimistic about Ash because a colleague said it was "different." They'll evaluate every interaction for VoiceOver compatibility, logical reading order, and whether the app actually makes sense without seeing the screen.`,
+        age: 28,
+      },
+      {
+        index: 2,
+        department: 'ADHD Navigator',
+        role: 'Mika',
+        expertise: ['High Tech Comfort', 'Easily Distracted', 'Visual Hierarchy Sensitivity', 'Dopamine-Seeking'],
+        mission: 'Figure out if Ash can hold attention long enough to actually be helpful.',
+        personality: 'Enthusiastic but scattered. Notices visual clutter instantly. Needs clear next-steps or loses interest. Hyperfocuses when something clicks.',
+        isPlayer: false,
+        color: '#f59e0b',
+        backstory: `Mika is a 23-year-old freelance graphic designer in Brooklyn. Diagnosed with ADHD at 16, they've tried every productivity and wellness app out there — most end up forgotten after day two. They need apps with clear visual hierarchy, minimal clutter, and obvious calls to action. If they have to figure out what to do next, they're already opening Instagram instead. They downloaded Ash because the icon was cute and the onboarding screen wasn't overwhelming. If the app can keep their attention past the first 3 screens, that's already a win.`,
+        age: 23,
+      },
+      {
+        index: 3,
+        department: 'ESL Speaker',
+        role: 'Elise',
+        expertise: ['Medium Tech Comfort', 'Language Barriers', 'Cultural Sensitivity', 'Literal Interpretation'],
+        mission: 'Understand if Ash communicates clearly enough for someone whose first language isn\'t English.',
+        personality: 'Thoughtful, precise with words, asks clarifying questions. Takes idioms literally. Appreciates simple, direct language.',
+        isPlayer: false,
+        color: '#ec4899',
+        backstory: `Elise is a 41-year-old nurse originally from Cameroon, now living in Minneapolis. She speaks French natively and learned English as an adult. She's proficient but idioms, slang, and ambiguous phrasing still trip her up. She works night shifts and often feels isolated. A coworker mentioned Ash as something to try during breaks. She needs the app to use clear, straightforward language — no "vibe check" or "let's unpack that." If something is confusing, she'll say so. She values warmth but not at the cost of clarity.`,
+        age: 41,
       },
     ],
   },
 ];
+
+// ─────────────────────────────────────────────────────────────
+//  Legacy accessors (for backward compatibility)
+// ─────────────────────────────────────────────────────────────
+/** @deprecated Use agent.backstory instead */
+export const PERSONA_BACKSTORIES: Record<number, string> = {
+  1: AGENT_SETS[0].agents[1].backstory!,
+  2: AGENT_SETS[0].agents[2].backstory!,
+  3: AGENT_SETS[0].agents[3].backstory!,
+};
+
+/** @deprecated Use agent.age instead */
+export const PERSONA_AGES: Record<number, number> = {
+  1: AGENT_SETS[0].agents[1].age!,
+  2: AGENT_SETS[0].agents[2].age!,
+  3: AGENT_SETS[0].agents[3].age!,
+};
 
 // ─────────────────────────────────────────────────────────────
 //  Helpers

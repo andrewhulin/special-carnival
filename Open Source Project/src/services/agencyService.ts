@@ -6,7 +6,7 @@ import {
   buildDynamicContext,
 } from '../prompts/agentPrompts'
 import { LLMFactory } from './llm/LLMFactory'
-import { LLMMessage } from './llm/types'
+import { LLMMessage, LLMContent } from './llm/types'
 import { AGENCY_TOOLS } from './llm/toolDefinitions'
 import { getActiveAgentSet } from '../store/agencyStore'
 
@@ -60,10 +60,11 @@ export async function callAgent(params: {
   agentIndex: number;
   userMessage: string;
   chatMode?: boolean;
+  imageData?: string;
 }): Promise<AgentResponse> {
   const signal = _resetController.signal;
   throwIfAborted(signal);
-  const { agentIndex, userMessage, chatMode = false } = params;
+  const { agentIndex, userMessage, chatMode = false, imageData } = params;
   const llmConfig = useStore.getState().llmConfig;
 
   let provider;
@@ -125,9 +126,16 @@ export async function callAgent(params: {
     history = contextWithSummary;
   }
 
+  const userContent: LLMContent = imageData
+    ? [
+        { type: 'image', source: { type: 'base64', media_type: 'image/png', data: imageData } },
+        { type: 'text', text: fullUserMessage },
+      ]
+    : fullUserMessage;
+
   const messages: LLMMessage[] = [
     ...history,
-    { role: 'user', content: fullUserMessage }
+    { role: 'user', content: userContent }
   ];
 
   // Always log the request
