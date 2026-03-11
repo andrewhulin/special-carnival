@@ -5,8 +5,7 @@ import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { DRACO_LIB_PATH } from '../constants';
 import { NavMeshManager } from '../pathfinding/NavMeshManager';
 import { PoiManager } from './PoiManager';
-import { getAgentSet } from '../../data/agents';
-import { useAgencyStore } from '../../store/agencyStore';
+import { getActiveAgentSet } from '../../store/agencyStore';
 
 export class WorldManager {
   private office: THREE.Group | null = null;
@@ -27,8 +26,7 @@ export class WorldManager {
     this.scene.add(this.office);
 
     // Get current AgentSet color
-    const selectedAgentSetId = useAgencyStore.getState().selectedAgentSetId;
-    const activeSet = getAgentSet(selectedAgentSetId);
+    const activeSet = getActiveAgentSet();
     const themeColor = new THREE.Color(activeSet.color);
 
     // Extract NavMesh and setup

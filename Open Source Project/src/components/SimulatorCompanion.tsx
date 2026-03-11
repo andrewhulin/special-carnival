@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Smartphone, ChevronDown, ChevronUp } from 'lucide-react';
-import { useAgencyStore } from '../store/agencyStore';
-import { getAgentSet } from '../data/agents';
+import { useAgencyStore, getActiveAgentSet } from '../store/agencyStore';
 import { getScreen } from '../data/appScreens';
 
 const SENTIMENT_EMOJI: Record<string, string> = {
@@ -14,8 +13,8 @@ const SENTIMENT_EMOJI: Record<string, string> = {
 
 const SimulatorCompanion: React.FC = () => {
   const [isExpanded, setIsExpanded] = useState(true);
-  const { personaScreens, feedbackItems, phase, selectedAgentSetId } = useAgencyStore();
-  const agents = getAgentSet(selectedAgentSetId).agents.filter(a => !a.isPlayer);
+  const { personaScreens, feedbackItems, phase } = useAgencyStore();
+  const agents = getActiveAgentSet().agents.filter(a => !a.isPlayer);
 
   // Derive discovered screens dynamically
   const discoveredScreens = useMemo(() => {

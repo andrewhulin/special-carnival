@@ -1,5 +1,4 @@
-import { useAgencyStore } from '../store/agencyStore'
-import { getAgentSet } from '../data/agents'
+import { useAgencyStore, getActiveAgentSet } from '../store/agencyStore'
 
 const ORCHESTRATOR_INDEX = 1
 
@@ -13,8 +12,8 @@ export interface ChatAvailability {
  * the current project phase and the agent's task state.
  */
 export function useChatAvailability(agentIndex: number | null): ChatAvailability {
-  const { phase, tasks, selectedAgentSetId } = useAgencyStore()
-  const agents = getAgentSet(selectedAgentSetId).agents
+  const { phase, tasks } = useAgencyStore()
+  const agents = getActiveAgentSet().agents
 
   if (agentIndex === null) return { canChat: false, reason: '' }
 

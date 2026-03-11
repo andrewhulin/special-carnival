@@ -1,15 +1,15 @@
 
 import { create } from 'zustand';
 import { CharacterState } from '../types';
-import { DEFAULT_AGENT_SET_ID, getAgentSet } from '../data/agents';
+import { resolveEnabledAgents, getDefaultEnabledKeys } from '../data/agents';
 import { useAgencyStore } from './agencyStore';
 
 export const useStore = create<CharacterState>()(
   (set) => ({
     isThinking: false,
-    instanceCount: getAgentSet(
-      useAgencyStore.getState().selectedAgentSetId ?? DEFAULT_AGENT_SET_ID
-    ).agents.length,
+    instanceCount: resolveEnabledAgents(
+      useAgencyStore.getState().enabledAgentKeys ?? getDefaultEnabledKeys()
+    ).length,
 
     selectedNpcIndex: null,
     selectedPosition: null,
@@ -66,9 +66,10 @@ export const useStore = create<CharacterState>()(
   })
 );
 
-// Keep instanceCount in sync whenever the active agent set changes
+// Keep instanceCount in sync whenever enabled agents change
 useAgencyStore.subscribe((state, prevState) => {
-  if (state.selectedAgentSetId !== prevState.selectedAgentSetId) {
-    useStore.getState().setInstanceCount(getAgentSet(state.selectedAgentSetId).agents.length);
+  if (state.enabledAgentKeys !== prevState.enabledAgentKeys) {
+    const agents = resolveEnabledAgents(state.enabledAgentKeys);
+    useStore.getState().setInstanceCount(agents.length);
   }
 });

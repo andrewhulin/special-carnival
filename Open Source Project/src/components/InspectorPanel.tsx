@@ -6,8 +6,9 @@ import { useChatAvailability } from '../hooks/useChatAvailability';
 import AgentView from './AgentView';
 import ProjectView from './ProjectView';
 import ChatPanel from './ChatPanel';
-import { getAgentSet } from '../data/agents';
-import { MessageSquare, Lock, Play } from 'lucide-react';
+import ConnectionCheckPanel from './ConnectionCheckPanel';
+import { getActiveAgentSet } from '../store/agencyStore';
+import { MessageSquare, Lock } from 'lucide-react';
 
 interface InspectorPanelProps {
   isFloating?: boolean;
@@ -16,8 +17,8 @@ interface InspectorPanelProps {
 const InspectorPanel: React.FC<InspectorPanelProps> = ({ isFloating }) => {
   const { selectedNpcIndex, isChatting } = useStore();
   const scene = useSceneManager();
-  const { phase, selectedAgentSetId, feedbackItems } = useAgencyStore();
-  const agents = getAgentSet(selectedAgentSetId).agents;
+  const { phase, feedbackItems } = useAgencyStore();
+  const agents = getActiveAgentSet().agents;
   const { canChat, reason } = useChatAvailability(selectedNpcIndex);
   const prevCanChat = useRef(canChat);
 
@@ -39,10 +40,6 @@ const InspectorPanel: React.FC<InspectorPanelProps> = ({ isFloating }) => {
     if (canChat && selectedNpcIndex !== null) {
       scene?.startChat(selectedNpcIndex);
     }
-  };
-
-  const handleStartSimulation = () => {
-    useAgencyStore.getState().setPhase('working');
   };
 
   return (
@@ -78,30 +75,15 @@ const InspectorPanel: React.FC<InspectorPanelProps> = ({ isFloating }) => {
                 )}
               </div>
 
-              {/* Start Testing Button (shown when idle and persona selected) */}
+              {/* Connection Check + Start (shown when idle and persona selected) */}
               {phase === 'idle' && !agent.isPlayer && !isChatting && (
-                <div className="flex flex-col gap-3 p-4 bg-indigo-50 border border-indigo-100 rounded-xl animate-in fade-in slide-in-from-top-1 shadow-sm">
-                  <div className="flex items-center gap-1.5">
-                    <div className="flex items-center justify-center w-5 h-5 bg-indigo-500 rounded-md text-white">
-                      <Play size={12} strokeWidth={3} />
-                    </div>
-                    <span className="text-[10px] font-black uppercase tracking-wider text-indigo-500">Ready to Explore</span>
-                  </div>
-                  <p className="text-[12px] font-bold text-zinc-900 leading-tight">
-                    Start the simulation to watch personas explore the Ash app.
-                  </p>
-                  <button
-                    onClick={handleStartSimulation}
-                    className="flex items-center justify-center gap-2 bg-indigo-500 hover:bg-indigo-600 active:scale-95 text-white px-4 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-sm mt-1"
-                  >
-                    <Play size={14} strokeWidth={3} />
-                    Start Testing
-                  </button>
+                <div className="p-3 bg-zinc-50 border border-zinc-100 rounded-xl animate-in fade-in slide-in-from-top-1">
+                  <ConnectionCheckPanel />
                 </div>
               )}
 
               {/* Chat / Follow-up Button */}
-              {(phase !== 'idle' || agent.isPlayer) && !isChatting && (
+              {phase !== 'idle' && !isChatting && (
                 <div className="w-full">
                   <button
                     onClick={handleStartChat}

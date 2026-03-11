@@ -4,10 +4,9 @@ import InspectorPanel from './InspectorPanel';
 import SimulatorCompanion from './SimulatorCompanion';
 import SimulatorStatus from './SimulatorStatus';
 import { Play, Pause, Maximize2, Minimize2, Users } from 'lucide-react';
-import { useAgencyStore } from '../store/agencyStore';
+import { useAgencyStore, getActiveAgentSet } from '../store/agencyStore';
 import { useStore } from '../store/useStore';
-import { getAgentSet } from '../data/agents';
-import AgentSetPickerModal from './AgentSetPickerModal';
+import CharacterPickerModal from './CharacterPickerModal';
 
 interface SimulationViewProps {
   canvasRef: React.RefObject<HTMLDivElement>;
@@ -19,21 +18,14 @@ const SimulationView: React.FC<SimulationViewProps> = ({ canvasRef, isFullscreen
   const isPaused = useAgencyStore((s) => s.isPaused);
   const setPaused = useAgencyStore((s) => s.setPaused);
   const pauseOnCall = useAgencyStore((s) => s.pauseOnCall);
-  const phase = useAgencyStore((s) => s.phase);
-  const setPhase = useAgencyStore((s) => s.setPhase);
   const actionLog = useAgencyStore((s) => s.actionLog);
   const selectedNpcIndex = useStore((s) => s.selectedNpcIndex);
   const isPlaying = !isPaused;
-  const selectedAgentSetId = useAgencyStore((s) => s.selectedAgentSetId);
+  const enabledAgentKeys = useAgencyStore((s) => s.enabledAgentKeys);
 
-  const activeSet = getAgentSet(selectedAgentSetId);
-  const agentCount = activeSet.agents.length - 1; // Exclude player
+  const activeSet = getActiveAgentSet();
+  const agentCount = enabledAgentKeys.length;
   const [isPickerOpen, setIsPickerOpen] = useState(false);
-  const hasLogs = actionLog.length > 0;
-
-  const handleStartTesting = () => {
-    setPhase('working');
-  };
 
   return (
     <div className="flex flex-col flex-1 min-w-0 min-h-0 relative">
@@ -109,24 +101,6 @@ const SimulationView: React.FC<SimulationViewProps> = ({ canvasRef, isFullscreen
       </div>
 
       <div ref={canvasRef} className="flex-1 min-h-0 relative overflow-hidden bg-black/5">
-        {/* Start Testing CTA — shown when idle */}
-        {phase === 'idle' && (
-          <div className="absolute inset-0 z-40 flex items-center justify-center pointer-events-none">
-            <div className="pointer-events-auto flex flex-col items-center gap-4 animate-in fade-in zoom-in-95 duration-300">
-              <button
-                onClick={handleStartTesting}
-                className="flex items-center gap-3 bg-indigo-500 hover:bg-indigo-600 active:scale-95 text-white px-8 py-4 rounded-2xl text-sm font-black uppercase tracking-widest transition-all shadow-lg shadow-indigo-500/25 hover:shadow-xl hover:shadow-indigo-500/30"
-              >
-                <Play size={20} strokeWidth={3} fill="white" />
-                Start Testing
-              </button>
-              <p className="text-xs font-medium text-zinc-500 bg-white/80 backdrop-blur-sm px-3 py-1 rounded-full">
-                {agentCount} personas will explore the Ash app
-              </p>
-            </div>
-          </div>
-        )}
-
         <SimulatorCompanion />
         <UIOverlay />
         {isFullscreen && selectedNpcIndex !== null && (
@@ -136,10 +110,9 @@ const SimulationView: React.FC<SimulationViewProps> = ({ canvasRef, isFullscreen
         )}
       </div>
 
-      <AgentSetPickerModal
+      <CharacterPickerModal
         isOpen={isPickerOpen}
         onClose={() => setIsPickerOpen(false)}
-        hasActiveProject={hasLogs}
       />
     </div>
   );

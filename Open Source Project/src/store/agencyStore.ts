@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import { LLMMessage } from '../services/llm/types'
 import { FeedbackItem } from '../types'
-import { AgentSet, DEFAULT_AGENT_SET_ID, getAgentSet } from '../data/agents'
+import { AgentSet, AgentData, DEFAULT_AGENT_SET_ID, getAgentSet, AgentKey, getDefaultEnabledKeys, resolveEnabledAgents, PLAYER_AGENT } from '../data/agents'
 
 export type TaskStatus = 'scheduled' | 'on_hold' | 'in_progress' | 'done'
 
@@ -67,6 +67,7 @@ interface AgencyState {
 
   // ── Agent Set ────────────────────────────────────────────────
   selectedAgentSetId: string;
+  enabledAgentKeys: AgentKey[];
 
   // ── UI ───────────────────────────────────────────────────────
   isKanbanOpen: boolean
@@ -114,6 +115,8 @@ interface AgencyState {
   togglePauseOnCall: () => void;
   resetProject: () => void;
   setAgentSet: (id: string) => void;
+  setEnabledAgentKeys: (keys: AgentKey[]) => void;
+  toggleAgentKey: (key: AgentKey) => void;
 }
 
 const uid = () => `${Date.now()}_${Math.random().toString(36).slice(2, 7)}`
@@ -122,6 +125,7 @@ export const useAgencyStore = create<AgencyState>()(
   persist(
     (set) => ({
       selectedAgentSetId: DEFAULT_AGENT_SET_ID,
+      enabledAgentKeys: getDefaultEnabledKeys(),
       clientBrief: '',
       phase: 'idle',
       finalOutput: null,
@@ -315,6 +319,19 @@ export const useAgencyStore = create<AgencyState>()(
         isFinalOutputOpen: false,
         isPaused: false,
       }),
+
+      setEnabledAgentKeys: (keys) => set({ enabledAgentKeys: keys }),
+
+      toggleAgentKey: (key) => set((s) => {
+        const isEnabled = s.enabledAgentKeys.includes(key);
+        if (isEnabled) {
+          // Don't allow removing the last agent
+          if (s.enabledAgentKeys.length <= 1) return {};
+          return { enabledAgentKeys: s.enabledAgentKeys.filter(k => k !== key) };
+        } else {
+          return { enabledAgentKeys: [...s.enabledAgentKeys, key] };
+        }
+      }),
     }),
     {
       name: 'ash-sandbox-storage',
@@ -322,13 +339,21 @@ export const useAgencyStore = create<AgencyState>()(
       partialize: (state) => ({
         pauseOnCall: state.pauseOnCall,
         selectedAgentSetId: state.selectedAgentSetId,
+        enabledAgentKeys: state.enabledAgentKeys,
       }),
     }
   )
 )
 
-/** Returns the currently active AgentSet. Safe to call from service/non-React contexts. */
-export function getActiveAgentSet(): AgentSet {
-  const { selectedAgentSetId } = useAgencyStore.getState()
-  return getAgentSet(selectedAgentSetId)
+/** Returns a virtual AgentSet built from the currently enabled agents. Safe to call from service/non-React contexts. */
+export function getActiveAgentSet(): AgentSet & { agents: AgentData[] } {
+  const { enabledAgentKeys, selectedAgentSetId } = useAgencyStore.getState()
+  const agents = resolveEnabledAgents(enabledAgentKeys)
+  const baseSet = getAgentSet(selectedAgentSetId)
+  return {
+    ...baseSet,
+    companyName: 'Custom Team',
+    companyType: `${agents.length - 1} personas selected`,
+    agents,
+  }
 }

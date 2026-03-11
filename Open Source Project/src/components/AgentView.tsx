@@ -1,6 +1,6 @@
 import React from 'react';
 import { useAgencyStore } from '../store/agencyStore';
-import { getAgentSet } from '../data/agents';
+import { getActiveAgentSet } from '../store/agencyStore';
 import { getScreen } from '../data/appScreens';
 
 interface AgentViewProps {
@@ -16,8 +16,8 @@ const SENTIMENT_EMOJI: Record<string, string> = {
 };
 
 const AgentView: React.FC<AgentViewProps> = ({ agentIndex }) => {
-  const { feedbackItems, personaScreens, selectedAgentSetId } = useAgencyStore();
-  const agents = getAgentSet(selectedAgentSetId).agents;
+  const { feedbackItems, personaScreens } = useAgencyStore();
+  const agents = getActiveAgentSet().agents;
 
   const agent = agents.find(a => a.index === agentIndex);
   if (!agent) return null;
@@ -36,6 +36,29 @@ const AgentView: React.FC<AgentViewProps> = ({ agentIndex }) => {
       </div>
 
       <div className="h-px bg-zinc-100 w-full mb-6" />
+
+      {/* Research Origins — real interview quotes */}
+      {agent.sourceQuotes && agent.sourceQuotes.length > 0 && (
+        <>
+          <div className="mb-6">
+            <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-3">Research Origins</p>
+            <div className="flex flex-col gap-2.5">
+              {agent.sourceQuotes.map((sq, i) => (
+                <div key={i} className="bg-zinc-50 rounded-lg p-3 border border-zinc-100 relative">
+                  <span className="text-zinc-200 text-lg font-serif absolute top-1 left-2">&ldquo;</span>
+                  <p className="text-[11px] text-zinc-600 leading-relaxed pl-4 italic">
+                    {sq.quote}
+                  </p>
+                  <p className="text-[9px] text-zinc-400 mt-1.5 pl-4">
+                    &mdash; {sq.source}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="h-px bg-zinc-100 w-full mb-6" />
+        </>
+      )}
 
       {/* Current Screen */}
       <div className="mb-6">

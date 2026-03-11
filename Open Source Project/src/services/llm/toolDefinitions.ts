@@ -74,17 +74,17 @@ export const AGENCY_TOOLS: LLMToolDefinition[] = [
     type: 'function',
     function: {
       name: 'tap_screen',
-      description: 'Tap on a specific element or location on the app screen. Use this to interact with buttons, links, cards, and other tappable elements.',
+      description: 'Tap on a specific element or location on the app screen. Use this to interact with buttons, links, cards, and other tappable elements. The screen is an iPhone (393x852 points). Estimate the x,y coordinates of the element center from the screenshot image. For example, a centered button near the bottom might be at (196, 750).',
       parameters: {
         type: 'object',
         properties: {
           x: {
             type: 'number',
-            description: 'The x coordinate to tap (in screen points).',
+            description: 'The x coordinate to tap (0-393, in iPhone screen points). Estimate from the screenshot.',
           },
           y: {
             type: 'number',
-            description: 'The y coordinate to tap (in screen points).',
+            description: 'The y coordinate to tap (0-852, in iPhone screen points). Estimate from the screenshot.',
           },
           description: {
             type: 'string',

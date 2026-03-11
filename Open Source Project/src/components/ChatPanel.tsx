@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useStore } from '../store/useStore';
 import { useSceneManager } from '../three/SceneContext';
 import { useAgencyStore } from '../store/agencyStore';
-import { getAgentSet } from '../data/agents';
+import { getActiveAgentSet } from '../store/agencyStore';
 import { Send, FolderOpen } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import ReactMarkdown from 'react-markdown';
@@ -18,8 +18,8 @@ const ChatPanel: React.FC = () => {
     setIsTyping
   } = useStore();
   const scene = useSceneManager();
-  const { phase, setFinalOutputOpen, selectedAgentSetId } = useAgencyStore();
-  const agents = getAgentSet(selectedAgentSetId).agents;
+  const { phase, setFinalOutputOpen } = useAgencyStore();
+  const agents = getActiveAgentSet().agents;
 
   const [input, setInput] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
