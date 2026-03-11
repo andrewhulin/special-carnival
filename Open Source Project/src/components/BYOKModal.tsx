@@ -10,9 +10,9 @@ interface BYOKModalProps {
 const STORAGE_KEY = 'byok-config';
 
 const PROVIDERS = [
+  { id: 'anthropic', label: 'Claude', model: 'claude-sonnet-4-20250514', enabled: true },
   { id: 'gemini', label: 'Gemini', model: 'gemini-3-flash-preview', enabled: true },
   { id: 'openai', label: 'OpenAI', model: 'gpt-4o', enabled: false },
-  { id: 'anthropic', label: 'Anthropic', model: 'claude-opus-4-5', enabled: false },
 ] as const;
 
 const BYOKModal: React.FC<BYOKModalProps> = ({ onClose }) => {
@@ -134,14 +134,16 @@ const BYOKModal: React.FC<BYOKModalProps> = ({ onClose }) => {
                 <label className="block text-[10px] font-black uppercase tracking-[0.15em] text-zinc-400">
                   Key
                 </label>
-                {selectedProvider === 'gemini' && (
+                {(selectedProvider === 'anthropic' || selectedProvider === 'gemini') && (
                   <a
-                    href="https://aistudio.google.com/app/apikey"
+                    href={selectedProvider === 'anthropic' ? 'https://console.anthropic.com/settings/keys' : 'https://aistudio.google.com/app/apikey'}
                     target="_blank"
                     rel="noopener"
                     className="group flex items-center gap-2 px-3 py-1 bg-emerald-50 hover:bg-emerald-100 border border-emerald-100 hover:border-emerald-200 rounded-full transition-all duration-200"
                   >
-                    <span className="text-[10px] font-black uppercase tracking-wider text-emerald-600">Get Gemini API Key</span>
+                    <span className="text-[10px] font-black uppercase tracking-wider text-emerald-600">
+                      {selectedProvider === 'anthropic' ? 'Get Claude API Key' : 'Get Gemini API Key'}
+                    </span>
                     <svg className="text-emerald-500 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                       <line x1="7" y1="17" x2="17" y2="7"></line>
                       <polyline points="7 7 17 7 17 17"></polyline>

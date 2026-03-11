@@ -15,7 +15,10 @@
     "build": "vite build",
     "preview": "vite preview",
     "clean": "rm -rf dist",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "ios:simulator": "open -a Simulator",
+    "ios:boot": "xcrun simctl boot \"iPhone 16 Pro\" 2>/dev/null; open -a Simulator",
+    "ios:safari": "xcrun simctl openurl booted http://localhost:3000/the-delegation/"
   },
   "dependencies": {
     "@google/genai": "^1.29.0",

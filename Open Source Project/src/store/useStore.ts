@@ -34,9 +34,9 @@ export const useStore = create<CharacterState>()(
         if (saved) return JSON.parse(saved);
       } catch {}
       return {
-        provider: 'gemini',
+        provider: 'anthropic',
         apiKey: '',
-        model: 'gemini-3-flash-preview'
+        model: 'claude-sonnet-4-20250514'
       };
     })(),
 
