@@ -154,6 +154,18 @@ export interface IAgentDriver {
 
 export type ExpressionKey = 'idle' | 'listening' | 'neutral' | 'surprised' | 'happy' | 'sick' | 'wink' | 'doubtful' | 'sad';
 
+// ── Feedback Sandbox ──────────────────────────────────────────
+
+export interface FeedbackItem {
+  id: string;
+  personaIndex: number;
+  screenId: string;
+  feedback: string;
+  sentiment: 'positive' | 'confused' | 'frustrated' | 'delighted' | 'neutral';
+  about: string;
+  timestamp: number;
+}
+
 export interface AtlasCoords {
   col: number;
   row: number;

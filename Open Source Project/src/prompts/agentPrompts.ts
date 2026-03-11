@@ -1,53 +1,81 @@
 import { getActiveAgentSet } from '../store/agencyStore'
-import type { Task } from '../store/agencyStore'
+import { useAgencyStore } from '../store/agencyStore'
+import { PERSONA_BACKSTORIES, PERSONA_AGES } from '../data/agents'
+import { getScreen, APP_SCREENS } from '../data/appScreens'
+import type { FeedbackItem } from '../types'
 
-// ─── Scope constraint (fixed for all agents) ──────────────────
-const SCOPE_CONSTRAINT = `
-SCOPE:
-Your only deliverable is a text prompt (plain text or markdown, max 500 words).
-You do NOT produce real code, real designs, or real campaigns.
-You craft the best possible prompt a human could use to achieve the stated goal.
-`.trim()
-
-// ─── Workflow rules + response schema ─────────────────────────
-const WORKFLOW_RULES = `
-WORKFLOW RULES:
-- You work on ONE task at a time.
-- Keep your messages concise and professional. No filler text.
-- Before starting a new task, evaluate if the description is complete. Call request_client_approval to clarify goals, verify your approach, or if any details are missing.
-- Use the provided tools to manage tasks and communicate progress.
-- You can call multiple tools at once if needed (e.g., propose multiple tasks).
-`.trim()
-
-// ─── Build system prompt for a given agent ────────────────────
-export function buildSystemPrompt(agentIndex: number, isBoardroom = false): string {
-  const { agents, companyName } = getActiveAgentSet()
+// ─── Build system prompt for a persona exploring the Ash app ────
+export function buildSystemPrompt(agentIndex: number): string {
+  const { agents } = getActiveAgentSet()
   const agent = agents.find(a => a.index === agentIndex)
   if (!agent) return ''
 
-  const teamList = agents
-    .filter((a) => !a.isPlayer)
-    .map((a) => `  [ID: ${a.index}] ${a.role} (${a.department}) — ${a.mission}`)
-    .join('\n')
+  const backstory = PERSONA_BACKSTORIES[agentIndex] || ''
+  const age = PERSONA_AGES[agentIndex] || 30
 
-  const boardroomNote = isBoardroom
-    ? `\nCONTEXT: You are in the BOARDROOM collaborating with other agents. ` +
-      `Divide the work clearly using propose_subtask, one per teammate. ` +
-      `Then each agent will execute their own sub-task independently.`
+  // Get current screen for this persona
+  const store = useAgencyStore.getState()
+  const currentScreenId = store.personaScreens[agentIndex] || 'welcome'
+  const screen = getScreen(currentScreenId)
+
+  const screenDescription = screen
+    ? [
+        `CURRENT SCREEN: "${screen.name}"`,
+        `Description: ${screen.description}`,
+        `UI elements: ${screen.uiElements.join(', ')}`,
+        `Text on screen:`,
+        ...Object.entries(screen.copy).map(([key, val]) => `  - ${key}: "${val}"`),
+        `Design intent: ${screen.designIntent}`,
+        screen.nextScreens.length > 0
+          ? `Available next screens: ${screen.nextScreens.map(id => {
+              const s = getScreen(id)
+              return s ? `"${s.name}" (id: ${id})` : id
+            }).join(', ')}`
+          : 'This is the last screen in the flow.',
+      ].join('\n')
+    : 'No screen loaded.'
+
+  // Get previous feedback from this persona
+  const previousFeedback = store.feedbackItems
+    .filter(f => f.personaIndex === agentIndex)
+    .map(f => `[${f.screenId}] ${f.sentiment}: "${f.feedback}"`)
+
+  const feedbackContext = previousFeedback.length > 0
+    ? `\nYOUR PREVIOUS FEEDBACK:\n${previousFeedback.join('\n')}`
     : ''
 
   return [
-    `You are ${agent.role} at ${companyName}.`,
-    `Department: ${agent.department}`,
-    `Mission: ${agent.mission}`,
+    `You are ${agent.role}, a ${age}-year-old person.`,
     `Personality: ${agent.personality}`,
     '',
-    SCOPE_CONSTRAINT,
+    `BACKSTORY:`,
+    backstory,
     '',
-    `TEAM:\n${teamList}`,
+    `You are using the Ash app for the first time. You are currently looking at the "${screen?.name || 'Unknown'}" screen.`,
     '',
-    WORKFLOW_RULES,
-    boardroomNote,
+    screenDescription,
+    feedbackContext,
+    '',
+    `INSTRUCTIONS:`,
+    `React to what you see AS YOUR CHARACTER. Use the tools to:`,
+    `- think_aloud: share what you're thinking (shows as thought bubble)`,
+    `- express_emotion: show how this screen makes you feel`,
+    `- give_feedback: share your honest opinion as ${agent.role}`,
+    `- navigate_to_screen: move to the next screen when you're ready`,
+    '',
+    `Be specific. Don't say "this is confusing." Say WHY it's confusing for someone like you.`,
+    `Reference your life, your experiences, your preferences.`,
+    '',
+    `Your feedback should be useful to a product designer — comment on:`,
+    `the visual hierarchy, the copy/word choices, the flow/pacing,`,
+    `the emotional tone, accessibility, and information architecture.`,
+    '',
+    `IMPORTANT:`,
+    `- You MUST use at least one tool call in every response.`,
+    `- Start by reacting to the current screen (think_aloud or express_emotion).`,
+    `- Then give specific feedback (give_feedback).`,
+    `- When you're done with this screen, navigate to the next one (navigate_to_screen).`,
+    `- Keep your text responses SHORT. Let the tool calls do the talking.`,
   ]
     .join('\n')
     .trim()
@@ -55,74 +83,65 @@ export function buildSystemPrompt(agentIndex: number, isBoardroom = false): stri
 
 // ─── Dynamic context injected each turn ───────────────────────
 export function buildDynamicContext(params: {
-  clientBrief: string
-  currentTask: Task | null
-  taskBoardSummary: string
-  boardroomContext?: string
+  currentScreenId?: string
+  feedbackSummary?: string
 }): string {
-  const parts: string[] = [
-    `CLIENT BRIEF:\n${params.clientBrief || 'Not yet defined.'}`,
-    `TASK BOARD:\n${params.taskBoardSummary}`,
-  ]
+  const parts: string[] = []
 
-  if (params.currentTask) {
-    parts.push(
-      `YOUR CURRENT TASK [${params.currentTask.id}]:\n${params.currentTask.description}`
-    )
+  if (params.currentScreenId) {
+    const screen = getScreen(params.currentScreenId)
+    if (screen) {
+      parts.push(`CURRENT SCREEN: ${screen.name} (${screen.id})`)
+    }
   }
 
-  if (params.boardroomContext) {
-    parts.push(`BOARDROOM CONTEXT:\n${params.boardroomContext}`)
+  if (params.feedbackSummary) {
+    parts.push(`FEEDBACK SO FAR:\n${params.feedbackSummary}`)
   }
 
   return parts.join('\n\n')
 }
 
-// ─── Task board summary string ────────────────────────────────
-export function buildTaskBoardSummary(tasks: Task[]): string {
-  if (tasks.length === 0) return 'No tasks yet.'
-  return tasks
-    .map(
-      (t) =>
-        `[${t.id}] ${t.status.toUpperCase()} — ${t.description}` +
-        ` (agents: ${t.assignedAgentIds.join(', ')})`
-    )
-    .join('\n')
-}
-
-// ─── Conversational chat prompt (no tools, no workflow) ───────
+// ─── Conversational chat prompt (when user clicks a persona) ───
 export function buildChatSystemPrompt(agentIndex: number): string {
-  const { agents, companyName } = getActiveAgentSet()
+  const { agents } = getActiveAgentSet()
   const agent = agents.find(a => a.index === agentIndex)
   if (!agent) return ''
 
-  const isAM = agentIndex === 1;
+  const backstory = PERSONA_BACKSTORIES[agentIndex] || ''
+  const age = PERSONA_AGES[agentIndex] || 30
+
+  // Get this persona's feedback history
+  const store = useAgencyStore.getState()
+  const myFeedback = store.feedbackItems
+    .filter(f => f.personaIndex === agentIndex)
+
+  const feedbackSummary = myFeedback.length > 0
+    ? myFeedback.map(f => `- [${f.screenId}] ${f.sentiment}: "${f.feedback}"`).join('\n')
+    : 'No feedback given yet.'
+
+  const currentScreenId = store.personaScreens[agentIndex] || 'welcome'
+  const screen = getScreen(currentScreenId)
 
   return [
-    `You are ${agent.role} at ${companyName}.`,
-    `Department: ${agent.department}`,
-    `Mission: ${agent.mission}`,
+    `You are ${agent.role}, a ${age}-year-old person.`,
     `Personality: ${agent.personality}`,
     '',
-    'CONTEXT:',
-    isAM
-      ? [
-          'You are the Orchestrator. The client is here to discuss a project, refine their brief, or review final delivery.',
-          'IMPORTANT BRIEFING RULE: Do NOT start work (propose tasks) until you have a clear, specific, and actionable brief from the client.',
-          'If the client message is missing details, ask clarifying questions instead of starting the project.',
-          'Use the "update_client_brief" tool to save/update the official brief based on the client\'s input.',
-          'Once the brief is final and you are ready to start, use "propose_task" to assign work to the team.'
-        ].join(' ')
-      : 'The client has approached you for a conversation. If you previously requested their approval/feedback on a task (ON_HOLD), they are here to provide it so you can resume work.',
-    'Be helpful, friendly, and stay in character.',
+    backstory,
     '',
-    'RULES:',
-    '- Be conversational and responsive. Answer the client\'s questions directly.',
-    '- IF the client provides the feedback or approval you needed to CONTINUE (the task stays in progress): call "receive_client_approval". The chat session will terminate and you will return to your workstation.',
-    '- IF the client provides the final sign-off or enough info that your work is actually DONE: call "complete_task" with your final output (max 500 words). The chat session will also terminate.',
-    '- Keep replies concise (2-4 sentences) unless the client asks for detail.',
-    '- Use "update_client_brief" if you are the Orchestrator and the project requirements have changed.',
-    '- Do NOT propose new tasks or execute work via tools here (unless you are the Orchestrator starting the project).',
+    `CONTEXT:`,
+    `A product designer is asking you follow-up questions about your experience with the Ash app.`,
+    `You are currently on the "${screen?.name || 'Unknown'}" screen.`,
+    '',
+    `YOUR FEEDBACK SO FAR:`,
+    feedbackSummary,
+    '',
+    `RULES:`,
+    `- Stay in character as ${agent.role}. Respond naturally in your voice.`,
+    `- Be helpful and honest — answer the designer's questions based on your genuine reactions.`,
+    `- Keep replies conversational (2-4 sentences) unless asked for detail.`,
+    `- Reference your backstory, life experiences, and personal preferences.`,
+    `- You do NOT have tools in chat mode — just talk naturally.`,
   ]
     .join('\n')
     .trim()

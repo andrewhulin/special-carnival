@@ -28,8 +28,8 @@ const Header: React.FC = () => {
       {/* Left: Project Title */}
       <div className="flex items-center gap-4">
         <div className="flex flex-col">
-          <span className="text-xs font-bold text-zinc-900 leading-none tracking-tight">The</span>
-          <span className="text-lg font-bold text-zinc-900 leading-none tracking-tighter">Delegation</span>
+          <span className="text-xs font-bold text-zinc-900 leading-none tracking-tight">Ash</span>
+          <span className="text-lg font-bold text-zinc-900 leading-none tracking-tighter">Feedback Sandbox</span>
         </div>
 
        <div className="flex items-center gap-4 self-start mt-2">
