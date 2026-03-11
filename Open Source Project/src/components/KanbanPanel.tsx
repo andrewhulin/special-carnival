@@ -1,8 +1,8 @@
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import { useAgencyStore } from '../store/agencyStore'
 import { getActiveAgentSet } from '../store/agencyStore'
 import { ChevronDown, ChevronRight } from 'lucide-react'
-import { APP_SCREENS } from '../data/appScreens'
+import { getScreen } from '../data/appScreens'
 import type { FeedbackItem } from '../types'
 
 const SENTIMENT_EMOJI: Record<string, string> = {
@@ -13,11 +13,15 @@ const SENTIMENT_EMOJI: Record<string, string> = {
   neutral: '\u{1F610}',
 };
 
-// Columns are screen names
-const COLUMNS = APP_SCREENS.map(s => ({
-  screenId: s.id,
-  label: s.name,
-}));
+/** Convert a screenId like 'persona-picker' or 'app' into a display label. */
+function formatScreenLabel(screenId: string): string {
+  const known = getScreen(screenId);
+  if (known) return known.name;
+  // Format unknown screenIds nicely: 'some-screen-id' → 'Some Screen Id'
+  return screenId
+    .replace(/[-_]/g, ' ')
+    .replace(/\b\w/g, c => c.toUpperCase());
+}
 
 interface KanbanPanelProps {
   height?: number;
@@ -81,7 +85,27 @@ function FeedbackCard({ item }: { item: FeedbackItem }) {
 }
 
 export function KanbanPanel({ height = 320 }: KanbanPanelProps) {
-  const { feedbackItems } = useAgencyStore()
+  const { feedbackItems, personaScreens, phase } = useAgencyStore()
+
+  // Derive columns dynamically from feedback items and active persona screens
+  const columns = useMemo(() => {
+    const screenIds = new Set<string>();
+
+    // Add screens that have feedback
+    feedbackItems.forEach(f => screenIds.add(f.screenId));
+
+    // Add screens personas are currently viewing
+    Object.values(personaScreens).forEach(id => {
+      if (id) screenIds.add(id);
+    });
+
+    return Array.from(screenIds).map(id => ({
+      screenId: id,
+      label: formatScreenLabel(id),
+    }));
+  }, [feedbackItems, personaScreens])
+
+  const isEmpty = columns.length === 0;
 
   return (
     <div
@@ -90,36 +114,53 @@ export function KanbanPanel({ height = 320 }: KanbanPanelProps) {
     >
       {/* Columns Scroll Area */}
       <div className="flex-1 overflow-x-auto overflow-y-hidden bg-zinc-50/20">
-        <div className="flex h-full min-w-max px-5 py-4 gap-4">
-          {COLUMNS.map(({ screenId, label }) => {
-            const colItems = feedbackItems.filter((f) => f.screenId === screenId)
-            return (
-              <div key={screenId} className="w-60 flex flex-col gap-3">
-                <div className="flex items-center justify-between shrink-0 select-none">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400 leading-none">
-                      {label}
-                    </span>
-                    <span className="px-1.5 py-0.5 bg-zinc-100 text-zinc-400 text-[9px] font-bold rounded-md min-w-4.5 text-center">
-                      {colItems.length}
-                    </span>
+        {isEmpty ? (
+          <div className="flex items-center justify-center h-full">
+            <div className="text-center">
+              <p className="text-xs font-bold text-zinc-300 uppercase tracking-widest">
+                {phase === 'idle' ? 'Start testing to see feedback' : 'Waiting for feedback...'}
+              </p>
+              <p className="text-[10px] text-zinc-300 mt-1">
+                Columns will appear as personas discover screens
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div className="flex h-full min-w-max px-5 py-4 gap-4">
+            {columns.map(({ screenId, label }) => {
+              const colItems = feedbackItems.filter((f) => f.screenId === screenId)
+              const isActive = Object.values(personaScreens).includes(screenId);
+              return (
+                <div key={screenId} className="w-60 flex flex-col gap-3">
+                  <div className="flex items-center justify-between shrink-0 select-none">
+                    <div className="flex items-center gap-2">
+                      {isActive && (
+                        <span className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-pulse shrink-0" />
+                      )}
+                      <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400 leading-none">
+                        {label}
+                      </span>
+                      <span className="px-1.5 py-0.5 bg-zinc-100 text-zinc-400 text-[9px] font-bold rounded-md min-w-4.5 text-center">
+                        {colItems.length}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex-1 flex flex-col gap-2 overflow-y-auto pr-1">
+                    {colItems.map((item) => (
+                      <FeedbackCard key={item.id} item={item} />
+                    ))}
+                    {colItems.length === 0 && (
+                      <div className="border border-dashed border-zinc-100 rounded-lg p-4 flex items-center justify-center select-none">
+                        <span className="text-[10px] font-bold text-zinc-300 uppercase tracking-widest">No feedback yet</span>
+                      </div>
+                    )}
                   </div>
                 </div>
-
-                <div className="flex-1 flex flex-col gap-2 overflow-y-auto pr-1">
-                  {colItems.map((item) => (
-                    <FeedbackCard key={item.id} item={item} />
-                  ))}
-                  {colItems.length === 0 && (
-                    <div className="border border-dashed border-zinc-100 rounded-lg p-4 flex items-center justify-center select-none">
-                      <span className="text-[10px] font-bold text-zinc-300 uppercase tracking-widest">No feedback yet</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )
-          })}
-        </div>
+              )
+            })}
+          </div>
+        )}
       </div>
     </div>
   )

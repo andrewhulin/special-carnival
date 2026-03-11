@@ -78,7 +78,7 @@ const InspectorPanel: React.FC<InspectorPanelProps> = ({ isFloating }) => {
                 )}
               </div>
 
-              {/* Start Simulation Button (shown when idle and persona selected) */}
+              {/* Start Testing Button (shown when idle and persona selected) */}
               {phase === 'idle' && !agent.isPlayer && !isChatting && (
                 <div className="flex flex-col gap-3 p-4 bg-indigo-50 border border-indigo-100 rounded-xl animate-in fade-in slide-in-from-top-1 shadow-sm">
                   <div className="flex items-center gap-1.5">
@@ -95,7 +95,7 @@ const InspectorPanel: React.FC<InspectorPanelProps> = ({ isFloating }) => {
                     className="flex items-center justify-center gap-2 bg-indigo-500 hover:bg-indigo-600 active:scale-95 text-white px-4 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-sm mt-1"
                   >
                     <Play size={14} strokeWidth={3} />
-                    Start Simulation
+                    Start Testing
                   </button>
                 </div>
               )}

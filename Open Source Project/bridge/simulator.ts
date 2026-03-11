@@ -8,34 +8,52 @@ const exec = promisify(execFile);
 
 /**
  * iOS Simulator control layer.
- * Prefers Facebook IDB if installed, falls back to xcrun + osascript.
+ * Prefers AXe CLI if installed, falls back to xcrun + osascript.
  */
 
-let _hasIdb: boolean | null = null;
+let _hasAxe: boolean | null = null;
+let _bootedUdid: string | null = null;
 
-async function hasIdb(): Promise<boolean> {
-  if (_hasIdb !== null) return _hasIdb;
+async function hasAxe(): Promise<boolean> {
+  if (_hasAxe !== null) return _hasAxe;
   try {
-    await exec('which', ['idb']);
-    _hasIdb = true;
+    await exec('which', ['axe']);
+    _hasAxe = true;
   } catch {
-    _hasIdb = false;
+    _hasAxe = false;
   }
-  return _hasIdb;
+  return _hasAxe;
+}
+
+/** Resolve the UDID of the booted simulator (AXe doesn't accept 'booted'). */
+async function getBootedUdid(): Promise<string> {
+  if (_bootedUdid) return _bootedUdid;
+  const { stdout } = await exec('xcrun', ['simctl', 'list', 'devices', 'booted', '--json']);
+  const data = JSON.parse(stdout);
+  for (const devices of Object.values(data.devices) as Array<Array<{ udid: string; state: string }>>) {
+    for (const device of devices) {
+      if (device.state === 'Booted') {
+        _bootedUdid = device.udid;
+        return device.udid;
+      }
+    }
+  }
+  throw new Error('No booted simulator found');
 }
 
 // ── Screenshot ─────────────────────────────────────────────
 
 export async function screenshot(): Promise<string> {
-  if (await hasIdb()) {
-    return screenshotIdb();
+  if (await hasAxe()) {
+    return screenshotAxe();
   }
   return screenshotXcrun();
 }
 
-async function screenshotIdb(): Promise<string> {
+async function screenshotAxe(): Promise<string> {
+  const udid = await getBootedUdid();
   const tmpPath = join(tmpdir(), `ash-sim-${Date.now()}.png`);
-  await exec('idb', ['screenshot', '--udid', 'booted', tmpPath]);
+  await exec('axe', ['screenshot', '--output', tmpPath, '--udid', udid]);
   const data = await readFile(tmpPath);
   await unlink(tmpPath).catch(() => {});
   return data.toString('base64');
@@ -52,8 +70,9 @@ async function screenshotXcrun(): Promise<string> {
 // ── Tap ────────────────────────────────────────────────────
 
 export async function tap(x: number, y: number): Promise<void> {
-  if (await hasIdb()) {
-    await exec('idb', ['ui', 'tap', String(x), String(y)]);
+  if (await hasAxe()) {
+    const udid = await getBootedUdid();
+    await exec('axe', ['tap', '-x', String(x), '-y', String(y), '--udid', udid]);
     return;
   }
   // Fallback: osascript click in Simulator window
@@ -74,8 +93,9 @@ export async function tap(x: number, y: number): Promise<void> {
 // ── Type Text ──────────────────────────────────────────────
 
 export async function typeText(text: string): Promise<void> {
-  if (await hasIdb()) {
-    await exec('idb', ['ui', 'text', text]);
+  if (await hasAxe()) {
+    const udid = await getBootedUdid();
+    await exec('axe', ['type', text, '--udid', udid]);
     return;
   }
   // Fallback: osascript keystroke
@@ -98,6 +118,19 @@ export async function swipe(
   startY = 420,
   distance = 300,
 ): Promise<void> {
+  if (await hasAxe()) {
+    const udid = await getBootedUdid();
+    // Map direction to AXe gesture presets
+    const gestureMap: Record<string, string> = {
+      up: 'scroll-up',
+      down: 'scroll-down',
+      left: 'scroll-left',
+      right: 'scroll-right',
+    };
+    await exec('axe', ['gesture', gestureMap[direction], '--udid', udid]);
+    return;
+  }
+
   const offsets: Record<string, [number, number]> = {
     up: [0, -distance],
     down: [0, distance],
@@ -108,14 +141,6 @@ export async function swipe(
   const endX = startX + dx;
   const endY = startY + dy;
 
-  if (await hasIdb()) {
-    await exec('idb', [
-      'ui', 'swipe',
-      String(startX), String(startY),
-      String(endX), String(endY),
-    ]);
-    return;
-  }
   // Fallback: osascript drag
   const script = `
     tell application "Simulator" to activate
@@ -124,7 +149,6 @@ export async function swipe(
       tell process "Simulator"
         set frontWindow to first window
         set {wx, wy} to position of frontWindow
-        -- Perform drag from start to end
         do shell script "cliclick dd:" & (${startX} + wx) & "," & (${startY} + wy) & " du:" & (${endX} + wx) & "," & (${endY} + wy)
       end tell
     end tell
@@ -139,9 +163,10 @@ export async function swipe(
 // ── Press Hardware Button ──────────────────────────────────
 
 export async function pressButton(button: 'home' | 'lock'): Promise<void> {
-  if (await hasIdb()) {
-    const idbButton = button === 'home' ? 'HOME' : 'LOCK';
-    await exec('idb', ['ui', 'button', idbButton]);
+  if (await hasAxe()) {
+    const udid = await getBootedUdid();
+    const axeButton = button === 'home' ? 'HOME' : 'LOCK';
+    await exec('axe', ['ui', 'button', axeButton, '--udid', udid]);
     return;
   }
   if (button === 'home') {

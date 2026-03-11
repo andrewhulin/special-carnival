@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
-import { Smartphone, ChevronDown, ChevronUp, ExternalLink } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { Smartphone, ChevronDown, ChevronUp } from 'lucide-react';
 import { useAgencyStore } from '../store/agencyStore';
 import { getAgentSet } from '../data/agents';
-import { getScreen, APP_SCREENS } from '../data/appScreens';
+import { getScreen } from '../data/appScreens';
 
 const SENTIMENT_EMOJI: Record<string, string> = {
   positive: '😊',
@@ -16,6 +16,17 @@ const SimulatorCompanion: React.FC = () => {
   const [isExpanded, setIsExpanded] = useState(true);
   const { personaScreens, feedbackItems, phase, selectedAgentSetId } = useAgencyStore();
   const agents = getAgentSet(selectedAgentSetId).agents.filter(a => !a.isPlayer);
+
+  // Derive discovered screens dynamically
+  const discoveredScreens = useMemo(() => {
+    const screenIds = new Set<string>();
+    feedbackItems.forEach(f => screenIds.add(f.screenId));
+    Object.values(personaScreens).forEach(id => { if (id) screenIds.add(id); });
+    return Array.from(screenIds).map(id => ({
+      id,
+      name: getScreen(id)?.name || id.replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
+    }));
+  }, [feedbackItems, personaScreens]);
 
   if (phase === 'idle') return null;
 
@@ -48,37 +59,43 @@ const SimulatorCompanion: React.FC = () => {
 
         {isExpanded && (
           <div className="border-t border-zinc-100">
-            {/* Screen progress bar */}
+            {/* Screen progress bar — dynamically built as screens are discovered */}
             <div className="px-4 py-2 bg-zinc-50/50">
-              <div className="flex gap-1">
-                {APP_SCREENS.map((screen) => {
-                  const isActive = activeScreenIds.has(screen.id);
-                  const feedbackCount = feedbackItems.filter(f => f.screenId === screen.id).length;
-                  return (
-                    <div
-                      key={screen.id}
-                      className={`flex-1 rounded-lg px-2 py-1.5 text-center transition-all ${
-                        isActive
-                          ? 'bg-violet-100 border border-violet-200'
-                          : feedbackCount > 0
-                            ? 'bg-emerald-50 border border-emerald-100'
-                            : 'bg-white border border-zinc-100'
-                      }`}
-                    >
-                      <div className={`text-[8px] font-black uppercase tracking-wider ${
-                        isActive ? 'text-violet-700' : feedbackCount > 0 ? 'text-emerald-600' : 'text-zinc-400'
-                      }`}>
-                        {screen.name}
-                      </div>
-                      {feedbackCount > 0 && (
-                        <div className="text-[7px] font-bold text-zinc-400 mt-0.5">
-                          {feedbackCount} feedback
+              {discoveredScreens.length === 0 ? (
+                <div className="text-[8px] font-bold text-zinc-300 uppercase tracking-wider text-center py-1">
+                  Discovering screens...
+                </div>
+              ) : (
+                <div className="flex gap-1">
+                  {discoveredScreens.map((screen) => {
+                    const isActive = activeScreenIds.has(screen.id);
+                    const feedbackCount = feedbackItems.filter(f => f.screenId === screen.id).length;
+                    return (
+                      <div
+                        key={screen.id}
+                        className={`flex-1 rounded-lg px-2 py-1.5 text-center transition-all ${
+                          isActive
+                            ? 'bg-violet-100 border border-violet-200'
+                            : feedbackCount > 0
+                              ? 'bg-emerald-50 border border-emerald-100'
+                              : 'bg-white border border-zinc-100'
+                        }`}
+                      >
+                        <div className={`text-[8px] font-black uppercase tracking-wider ${
+                          isActive ? 'text-violet-700' : feedbackCount > 0 ? 'text-emerald-600' : 'text-zinc-400'
+                        }`}>
+                          {screen.name}
                         </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
+                        {feedbackCount > 0 && (
+                          <div className="text-[7px] font-bold text-zinc-400 mt-0.5">
+                            {feedbackCount} feedback
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
             {/* Per-persona status */}

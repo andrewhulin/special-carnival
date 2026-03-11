@@ -3,12 +3,53 @@
 ## Project Overview
 **Ash Feedback Lab** — a playful 3D sandbox where AI persona characters use the real Ash app in the iOS Simulator and give character-driven design feedback. The web app (Three.js 3D office) serves as the observation/feedback dashboard.
 
-## How to Run
+## Setup & How to Run
+
+### Prerequisites
+- macOS with Xcode installed
+- iOS Simulator booted with the Ash app running
+- Node.js 18+
+- An Anthropic API key (`sk-ant-...`) from [console.anthropic.com](https://console.anthropic.com)
+
+### 1. Install AXe CLI (one-time)
+```bash
+brew install cameroncooke/axe/axe
+```
+
+Verify it works:
+```bash
+axe list-simulators
+# Should show your booted iPhone 16 Pro with status "Booted"
+```
+
+### 2. Install dependencies (one-time)
 ```bash
 cd "Open Source Project"
 npm install
+```
+
+### 3. Start the bridge server (Terminal 1)
+```bash
+cd "Open Source Project"
+npm run bridge
+```
+Expected output:
+```
+Ash Feedback Lab — Simulator Bridge
+Running on http://localhost:3001
+Simulator: iPhone 16 Pro (running)
+```
+
+### 4. Start the web app (Terminal 2)
+```bash
+cd "Open Source Project"
 npm run dev
 ```
+
+### 5. Open and configure
+1. Visit **http://localhost:3000** in your browser
+2. Enter your **Anthropic API key** when prompted (stored in localStorage)
+3. Pick a persona set and hit **Start**
 
 ## Key File Locations
 - **Persona Data:** `Open Source Project/src/data/agents.ts`
