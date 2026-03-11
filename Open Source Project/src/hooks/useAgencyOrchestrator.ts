@@ -83,7 +83,7 @@ export function useAgencyOrchestrator() {
         let imageData: string | undefined
 
         if (screenshot) {
-          userMessage = `Here is a screenshot of the Ash app as you see it right now. React to what you see, interact with the app by tapping elements, and share your feedback. If you want to move forward in the app, tap the appropriate button.`
+          userMessage = `Here is a screenshot of the Ash app on an iPhone (393x852 points). You MUST: 1) Call give_feedback to record your reaction to this screen. 2) Call tap_screen with estimated x,y coordinates to tap a button and navigate forward. Look for buttons, links, or interactive elements and tap them to explore the app. Don't just observe — actively navigate!`
           imageData = screenshot
         } else {
           // Fallback: text-only mode when bridge is not running
@@ -135,7 +135,8 @@ export function useAgencyOrchestrator() {
       runningAgents.current.delete(agentIndex)
 
       // Check if all personas are done
-      const allDone = ![1, 2, 3].some(i => runningAgents.current.has(i))
+      const activeAgents = getActiveAgentSet().agents.filter(a => !a.isPlayer)
+      const allDone = !activeAgents.some(a => runningAgents.current.has(a.index))
       if (allDone && useAgencyStore.getState().phase === 'working') {
         useAgencyStore.getState().setPhase('done')
         useAgencyStore.getState().addLogEntry({

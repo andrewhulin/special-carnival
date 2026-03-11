@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useAgencyStore } from '../store/agencyStore';
-import { RefreshCcw, Play, Sparkles } from 'lucide-react';
+import { RefreshCcw } from 'lucide-react';
 import ResetModal from './ResetModal';
-import AgentSetPickerModal from './AgentSetPickerModal';
+import CharacterPickerModal from './CharacterPickerModal';
+import ConnectionCheckPanel from './ConnectionCheckPanel';
 import { useSceneManager } from '../three/SceneContext';
 import { abortAllCalls } from '../services/agencyService';
 
@@ -12,7 +13,6 @@ const ProjectView: React.FC = () => {
     actionLog,
     feedbackItems,
     resetProject,
-    setPhase,
   } = useAgencyStore();
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
   const [isPickerOpen, setIsPickerOpen] = useState(false);
@@ -32,10 +32,6 @@ const ProjectView: React.FC = () => {
     scene?.resetScene();
     resetProject();
     setIsResetModalOpen(false);
-  };
-
-  const handleStartSimulation = () => {
-    setPhase('working');
   };
 
   return (
@@ -58,23 +54,10 @@ const ProjectView: React.FC = () => {
 
       <div className="h-px bg-zinc-100 w-full mb-6" />
 
-      {/* Start Testing */}
+      {/* Connection Check + Start */}
       {phase === 'idle' && (
         <div className="mb-8">
-          <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-6 flex flex-col items-center gap-4">
-            <Sparkles size={32} className="text-indigo-400" />
-            <div className="text-center">
-              <p className="text-sm font-bold text-zinc-900 mb-1">Ready to explore</p>
-              <p className="text-xs text-zinc-500">Three AI personas will explore the Ash app and share their honest feedback.</p>
-            </div>
-            <button
-              onClick={handleStartSimulation}
-              className="flex items-center justify-center gap-2 bg-indigo-500 hover:bg-indigo-600 active:scale-95 text-white px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-sm w-full"
-            >
-              <Play size={14} strokeWidth={3} />
-              Start Testing
-            </button>
-          </div>
+          <ConnectionCheckPanel />
         </div>
       )}
 
@@ -128,10 +111,9 @@ const ProjectView: React.FC = () => {
         onConfirm={handleResetConfirm}
       />
 
-      <AgentSetPickerModal
+      <CharacterPickerModal
         isOpen={isPickerOpen}
         onClose={() => setIsPickerOpen(false)}
-        hasActiveProject={hasLogs}
       />
     </div>
   );

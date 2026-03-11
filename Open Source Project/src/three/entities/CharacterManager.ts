@@ -228,10 +228,11 @@ export class CharacterManager {
         const colorOverride = this.colors && this.colors[i] ? this.colors[i] : agent.color;
 
         if (i === PLAYER_INDEX) {
-            // Player spawns slightly offset from center so they're clearly visible
+            // Player is hidden — move off-screen and make invisible
             posArray[i * 4 + 0] = 0;
+            posArray[i * 4 + 1] = -100;
             posArray[i * 4 + 2] = 0;
-            posArray[i * 4 + 3] = 1;
+            posArray[i * 4 + 3] = 0; // alpha = 0 (invisible)
             tempColor.set(colorOverride);
             agentsBuffer[i] = null;
         } else {

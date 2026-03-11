@@ -2,8 +2,7 @@
 import React, { useState } from 'react';
 import { useStore } from '../store/useStore';
 import InfoModal from './InfoModal';
-import { getAgentSet } from '../data/agents';
-import { useAgencyStore } from '../store/agencyStore';
+import { useAgencyStore, getActiveAgentSet } from '../store/agencyStore';
 import { getScreen } from '../data/appScreens';
 import { MessageCircle, Sparkles } from 'lucide-react';
 
@@ -79,9 +78,8 @@ const UIOverlay: React.FC = () => {
     phase,
     personaScreens,
     feedbackItems,
-    selectedAgentSetId,
   } = useAgencyStore();
-  const agents = getAgentSet(selectedAgentSetId).agents;
+  const agents = getActiveAgentSet().agents;
 
   const selectedAgent = selectedNpcIndex != null ? agents.find(a => a.index === selectedNpcIndex) ?? null : null;
   const hoveredAgent = hoveredNpcIndex != null ? agents.find(a => a.index === hoveredNpcIndex) ?? null : null;
@@ -146,23 +144,17 @@ const UIOverlay: React.FC = () => {
                   style={{ backgroundColor: selectedAgent.color }}
                 />
                 <div className="flex items-center gap-1.5">
-                  {selectedAgent.isPlayer ? (
-                    <span className="text-[10px] font-black uppercase tracking-widest text-white">{selectedAgent.role} (You)</span>
-                  ) : (
-                    <>
-                      <span className="text-[10px] font-black uppercase tracking-widest text-white">
-                        {selectedAgent.role}
-                      </span>
-                      <span className="text-[10px] font-medium uppercase tracking-widest text-white/40">·</span>
-                      <span className="text-[10px] font-medium uppercase tracking-widest text-white/60">
-                        {selectedAgent.department}
-                      </span>
-                      <span className="text-[10px] font-medium uppercase tracking-widest text-white/40">·</span>
-                      <span className={`text-[10px] font-bold uppercase tracking-widest ${label.className}`}>
-                        {label.text}
-                      </span>
-                    </>
-                  )}
+                  <span className="text-[10px] font-black uppercase tracking-widest text-white">
+                    {selectedAgent.role}
+                  </span>
+                  <span className="text-[10px] font-medium uppercase tracking-widest text-white/40">·</span>
+                  <span className="text-[10px] font-medium uppercase tracking-widest text-white/60">
+                    {selectedAgent.department}
+                  </span>
+                  <span className="text-[10px] font-medium uppercase tracking-widest text-white/40">·</span>
+                  <span className={`text-[10px] font-bold uppercase tracking-widest ${label.className}`}>
+                    {label.text}
+                  </span>
                 </div>
               </div>
             </div>
@@ -188,23 +180,17 @@ const UIOverlay: React.FC = () => {
                   style={{ backgroundColor: hoveredAgent.color }}
                 />
                 <div className="flex items-center gap-1.5">
-                  {hoveredAgent.isPlayer ? (
-                    <span className="text-[10px] font-black uppercase tracking-widest text-white">{hoveredAgent.role} (You)</span>
-                  ) : (
-                    <>
-                      <span className="text-[10px] font-black uppercase tracking-widest text-white">
-                        {hoveredAgent.role}
-                      </span>
-                      <span className="text-[10px] font-medium uppercase tracking-widest text-white/40">·</span>
-                      <span className="text-[10px] font-medium uppercase tracking-widest text-white/60">
-                        {hoveredAgent.department}
-                      </span>
-                      <span className="text-[10px] font-medium uppercase tracking-widest text-white/40">·</span>
-                      <span className={`text-[10px] font-bold uppercase tracking-widest ${label.className}`}>
-                        {label.text}
-                      </span>
-                    </>
-                  )}
+                  <span className="text-[10px] font-black uppercase tracking-widest text-white">
+                    {hoveredAgent.role}
+                  </span>
+                  <span className="text-[10px] font-medium uppercase tracking-widest text-white/40">·</span>
+                  <span className="text-[10px] font-medium uppercase tracking-widest text-white/60">
+                    {hoveredAgent.department}
+                  </span>
+                  <span className="text-[10px] font-medium uppercase tracking-widest text-white/40">·</span>
+                  <span className={`text-[10px] font-bold uppercase tracking-widest ${label.className}`}>
+                    {label.text}
+                  </span>
                 </div>
               </div>
             </div>

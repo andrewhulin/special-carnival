@@ -33,6 +33,7 @@ export class AnthropicProvider implements LLMProvider {
 
     if (anthropicTools) {
       body.tools = anthropicTools;
+      body.tool_choice = { type: 'any' };
     }
 
     const response = await fetch('/anthropic-api/v1/messages', {

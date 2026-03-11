@@ -9,7 +9,7 @@ import { PoiManager } from './world/PoiManager';
 import { WorldManager } from './world/WorldManager';
 import { DriverManager } from './drivers/DriverManager';
 import { InputManager } from './input/InputManager';
-import { PLAYER_INDEX, NPC_START_INDEX, getAgentSet } from '../data/agents';
+import { PLAYER_INDEX, NPC_START_INDEX } from '../data/agents';
 import { useStore } from '../store/useStore';
 import { useAgencyStore, getActiveAgentSet } from '../store/agencyStore';
 import { AgentBehavior, ChatMessage } from '../types';
@@ -25,7 +25,7 @@ export class SceneManager {
   private worldManager: WorldManager;
   private driverManager: DriverManager | null = null;
 
-  private lastAgentSetId: string | null = null;
+  private lastEnabledKeys: string | null = null;
 
   // Track which NPC is selected for camera follow
   private selectedIndex: number | null = null;
@@ -94,11 +94,13 @@ export class SceneManager {
       () => this.controller!.getCPUPositions(),
       () => this.controller!.getCount(),
       (index) => {
+        // Skip player character (hidden) — only allow NPC selection
+        if (index === PLAYER_INDEX) return;
         const storeState = useStore.getState();
         if (storeState.isChatting) {
           this.endChat();
         }
-        this.selectedIndex = index !== PLAYER_INDEX ? index : null;
+        this.selectedIndex = index;
         useStore.getState().setSelectedNpc(this.selectedIndex);
       },
       (x, z) => playerDriver.onFloorClick(x, z),
@@ -119,12 +121,12 @@ export class SceneManager {
         this.controller?.setInstanceCount(s.instanceCount);
       }
 
-      // Update world color if agent set changes
+      // Update world color if enabled agents change
       const agencyState = useAgencyStore.getState();
-      const currentSetId = agencyState.selectedAgentSetId;
-      if (currentSetId !== this.lastAgentSetId) {
-        this.lastAgentSetId = currentSetId;
-        const activeSet = getAgentSet(currentSetId);
+      const keysStr = agencyState.enabledAgentKeys.join(',');
+      if (keysStr !== this.lastEnabledKeys) {
+        this.lastEnabledKeys = keysStr;
+        const activeSet = getActiveAgentSet();
         this.worldManager.updateThemeColor(activeSet.color);
 
         // Force agents to their spawn points and update colors when the team changes
@@ -148,19 +150,12 @@ export class SceneManager {
             this.controller.play(npc, s.isThinking ? 'talk' : 'listen');
           }
           this.controller.setSpeaking(npc, s.isThinking);
-          // Player: typing = talk, waiting = listen
-          if (this.controller.getState(PLAYER_INDEX) !== 'walk') {
-            this.controller.play(PLAYER_INDEX, s.isTyping ? 'talk' : 'listen');
-          }
-          this.controller.setSpeaking(PLAYER_INDEX, s.isTyping);
         } else if (!s.isChatting && prev.isChatting) {
-          // Chat ended — restore both sides
+          // Chat ended — restore NPC
           if (prev.selectedNpcIndex !== null) {
             this.controller.setSpeaking(prev.selectedNpcIndex, false);
             this.controller.play(prev.selectedNpcIndex, 'idle');
           }
-          this.controller.setSpeaking(PLAYER_INDEX, false);
-          this.controller.play(PLAYER_INDEX, 'idle');
         }
       }
     });
@@ -172,20 +167,8 @@ export class SceneManager {
 
   public startChat(npcIndex: number): void {
     if (!this.controller) return;
-    const positions = this.controller.getCPUPositions();
-    if (!positions) return;
 
-    const npc = new THREE.Vector3(positions[npcIndex * 4], 0, positions[npcIndex * 4 + 2]);
-    const player = new THREE.Vector3(positions[PLAYER_INDEX * 4], 0, positions[PLAYER_INDEX * 4 + 2]);
-
-    // Direction from NPC to player, stop 1.2 units away
-    let dir = new THREE.Vector3().subVectors(player, npc);
-    const dist = dir.length();
-    if (dist < 0.01) dir.set(1, 0, 0); else dir.divideScalar(dist);
-
-    const target = npc.clone().addScaledVector(dir, 1.2);
-
-    // Stop NPC autonomous behavior by making them "busy" in the agency store sense
+    // Stop NPC autonomous behavior and start chat
     useStore.setState({
       selectedNpcIndex: npcIndex,
       isChatting: true,
@@ -194,47 +177,33 @@ export class SceneManager {
     });
     this.selectedIndex = npcIndex;
 
-    // Stop NPC, face player
+    // Stop NPC movement and set to listen pose
     this.controller.cancelMovement(npcIndex);
     this.controller.play(npcIndex, 'listen');
-    this.controller.getAgentStateBuffer()?.setWaypoint(npcIndex, dir.x, dir.z);
 
-    // Walk player to the NPC
-    const playerDriver = this.driverManager?.getPlayerDriver();
-    playerDriver?.walkTo(target, 'listen', () => {
-      // Face each other once arrived
-      const p = this.controller!.getCPUPositions()!;
-      const fx = p[npcIndex * 4] - p[PLAYER_INDEX * 4];
-      const fz = p[npcIndex * 4 + 2] - p[PLAYER_INDEX * 4 + 2];
-      this.controller!.getAgentStateBuffer()?.setWaypoint(PLAYER_INDEX, fx, fz);
-      this.controller!.getAgentStateBuffer()?.setWaypoint(npcIndex, -fx, -fz);
+    // Pre-fill Chat if agent has pending approval
+    const agencyStore = useAgencyStore.getState();
+    const task = agencyStore.tasks.find(
+      (t) => t.status === 'on_hold' && t.assignedAgentIds.includes(npcIndex),
+    );
 
-      // --- New: Pre-fill Chat if agent has pending approval ---
-      const agencyStore = useAgencyStore.getState();
-      const task = agencyStore.tasks.find(
-        (t) => t.status === 'on_hold' && t.assignedAgentIds.includes(npcIndex),
-      );
+    if (task) {
+      const approvalLog = agencyStore.actionLog.find(l => l.taskId === task.id && l.action.toLowerCase().includes('approval'));
+      const question = approvalLog ? approvalLog.action.replace(/^requested client approval — "/, '').replace(/"$/, '') : null;
 
-      if (task) {
-        // Find the log entry for the approval request to get the question
-        const approvalLog = agencyStore.actionLog.find(l => l.taskId === task.id && l.action.toLowerCase().includes('approval'));
-        const question = approvalLog ? approvalLog.action.replace(/^requested client approval — "/, '').replace(/"$/, '') : null;
-
-        if (question) {
-          const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-          const approvalMsg: ChatMessage = {
-            role: 'assistant',
-            text: `I've paused my work because I need your input: "${question}"\n\nHow should I proceed?`,
-            timestamp
-          };
-          // Switch Inspector to chat tab so the conversation is immediately visible
-          useStore.setState({ chatMessages: [approvalMsg], inspectorTab: 'chat' });
-          return; // Skip default greeting
-        }
+      if (question) {
+        const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const approvalMsg: ChatMessage = {
+          role: 'assistant',
+          text: `I've paused my work because I need your input: "${question}"\n\nHow should I proceed?`,
+          timestamp
+        };
+        useStore.setState({ chatMessages: [approvalMsg], inspectorTab: 'chat' });
+        return;
       }
+    }
 
-      this._triggerNpcGreeting(npcIndex);
-    });
+    this._triggerNpcGreeting(npcIndex);
   }
 
   public endChat(): void {
@@ -250,10 +219,6 @@ export class SceneManager {
       this.controller.play(selectedNpcIndex, 'idle');
       // Release POI if any
       this.controller.poiManager.releaseAll(selectedNpcIndex);
-    }
-    if (this.controller) {
-      this.controller.setSpeaking(PLAYER_INDEX, false);
-      this.controller.play(PLAYER_INDEX, 'idle');
     }
     this.selectedIndex = null;
     useStore.getState().setSelectedNpc(null);
@@ -431,8 +396,8 @@ export class SceneManager {
       this.updateTransparency(positions, delta);
     });
 
-    // 3. Camera follow
-    const followIdx = this.selectedIndex ?? PLAYER_INDEX;
+    // 3. Camera follow — default to first NPC (player is hidden)
+    const followIdx = this.selectedIndex ?? NPC_START_INDEX;
     const followPos = this.controller?.getCPUPosition(followIdx) ?? null;
     this.stage.setFollowTarget(followPos);
 
