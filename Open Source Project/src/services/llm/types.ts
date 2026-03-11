@@ -1,8 +1,23 @@
 export type LLMRole = 'system' | 'user' | 'assistant' | 'tool';
 
+export interface LLMImageBlock {
+  type: 'image';
+  source: { type: 'base64'; media_type: string; data: string };
+}
+
+export interface LLMTextBlock {
+  type: 'text';
+  text: string;
+}
+
+export type LLMContentBlock = LLMTextBlock | LLMImageBlock;
+
+/** Content can be a plain string or an array of text/image blocks (for vision). */
+export type LLMContent = string | LLMContentBlock[];
+
 export interface LLMMessage {
   role: LLMRole;
-  content: string;
+  content: LLMContent;
   name?: string; // Required for tool responses in some APIs
   tool_calls?: LLMToolCall[];
 }

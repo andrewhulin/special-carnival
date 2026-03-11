@@ -69,21 +69,60 @@ export const AGENCY_TOOLS: LLMToolDefinition[] = [
   {
     type: 'function',
     function: {
-      name: 'navigate_to_screen',
-      description: 'Move to the next screen in the app. Call this when you are ready to continue exploring.',
+      name: 'tap_screen',
+      description: 'Tap on a specific element or location on the app screen. Use this to interact with buttons, links, cards, and other tappable elements.',
       parameters: {
         type: 'object',
         properties: {
-          screen_id: {
-            type: 'string',
-            description: 'The ID of the screen to navigate to.',
+          x: {
+            type: 'number',
+            description: 'The x coordinate to tap (in screen points).',
           },
-          reason: {
+          y: {
+            type: 'number',
+            description: 'The y coordinate to tap (in screen points).',
+          },
+          description: {
             type: 'string',
-            description: 'Why you are moving to this screen.',
+            description: 'What you are tapping on and why (e.g., "the Get Started button to begin onboarding").',
           },
         },
-        required: ['screen_id', 'reason'],
+        required: ['x', 'y', 'description'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'type_text',
+      description: 'Type text into the currently focused text field.',
+      parameters: {
+        type: 'object',
+        properties: {
+          text: {
+            type: 'string',
+            description: 'The text to type.',
+          },
+        },
+        required: ['text'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'scroll',
+      description: 'Scroll the current screen up or down to see more content.',
+      parameters: {
+        type: 'object',
+        properties: {
+          direction: {
+            type: 'string',
+            enum: ['up', 'down'],
+            description: 'Which direction to scroll.',
+          },
+        },
+        required: ['direction'],
       },
     },
   },

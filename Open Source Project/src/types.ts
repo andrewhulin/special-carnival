@@ -154,7 +154,7 @@ export interface IAgentDriver {
 
 export type ExpressionKey = 'idle' | 'listening' | 'neutral' | 'surprised' | 'happy' | 'sick' | 'wink' | 'doubtful' | 'sad';
 
-// ── Feedback Sandbox ──────────────────────────────────────────
+// ── Feedback Lab ──────────────────────────────────────────
 
 export interface FeedbackItem {
   id: string;

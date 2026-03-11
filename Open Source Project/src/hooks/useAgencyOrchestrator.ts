@@ -7,11 +7,12 @@ import {
   type AgentFunctionCall,
 } from '../services/agencyService'
 import { ToolHandlerService } from '../services/toolHandlerService'
-import { FIRST_SCREEN_ID } from '../data/appScreens'
 import { getActiveAgentSet } from '../store/agencyStore'
+import { simulatorService } from '../services/simulatorService'
 
 // ── Constants ─────────────────────────────────────────────────
-const MAX_EXPLORATION_STEPS = 8 // Max LLM calls per persona before stopping
+const MAX_EXPLORATION_STEPS = 12 // Max LLM calls per persona before stopping
+const INTERACTION_TOOLS = new Set(['tap_screen', 'type_text', 'scroll'])
 
 const randomBetween = (min: number, max: number) =>
   Math.random() * (max - min) + min
@@ -28,10 +29,22 @@ export function useAgencyOrchestrator() {
   const runningAgents = useRef(new Set<number>())
 
   /**
-   * Wrapper for tool handler to include local context.
+   * Wrapper for tool handler — now async for simulator tools.
    */
-  const processFunctionCall = (fn: AgentFunctionCall, callerIndex: number): boolean => {
+  const processFunctionCall = async (fn: AgentFunctionCall, callerIndex: number): Promise<boolean> => {
     return ToolHandlerService.process(fn, callerIndex, sceneRef.current)
+  }
+
+  /**
+   * Take a screenshot from the iOS Simulator and return it as a base64 string.
+   * Returns null if the bridge is not available (falls back to text-only mode).
+   */
+  const captureScreenshot = async (): Promise<string | null> => {
+    try {
+      return await simulatorService.screenshot()
+    } catch {
+      return null
+    }
   }
 
   // ── Single persona exploration loop ───────────────────────────
@@ -41,8 +54,7 @@ export function useAgencyOrchestrator() {
 
     const store = useAgencyStore.getState()
 
-    // Set initial screen
-    store.setPersonaScreen(agentIndex, FIRST_SCREEN_ID)
+    store.setPersonaScreen(agentIndex, 'app')
 
     store.addLogEntry({
       agentIndex,
@@ -63,41 +75,45 @@ export function useAgencyOrchestrator() {
         const currentPhase = useAgencyStore.getState().phase
         if (currentPhase !== 'working') break
 
-        const currentScreenId = useAgencyStore.getState().personaScreens[agentIndex] || FIRST_SCREEN_ID
+        // Capture screenshot from the real app
+        const screenshot = await captureScreenshot()
+
+        // Build the user message — with or without screenshot
+        let userMessage: string
+        let imageData: string | undefined
+
+        if (screenshot) {
+          userMessage = `Here is a screenshot of the Ash app as you see it right now. React to what you see, interact with the app by tapping elements, and share your feedback. If you want to move forward in the app, tap the appropriate button.`
+          imageData = screenshot
+        } else {
+          // Fallback: text-only mode when bridge is not running
+          userMessage = `You are exploring the Ash app. The simulator bridge is not connected, so describe what you imagine seeing on a mental health app's onboarding flow. Give feedback based on your character's perspective.`
+        }
 
         const response = await callAgent({
           agentIndex,
-          userMessage: `You are now looking at the "${currentScreenId}" screen of the Ash app. React to what you see, give feedback, and navigate to the next screen when ready.`,
+          userMessage,
+          imageData,
         })
 
-        // Process all tool calls
-        let navigated = false
+        // Process all tool calls — some are async (simulator interaction)
+        let interacted = false
         if (response.functionCalls) {
           for (const fn of response.functionCalls) {
-            processFunctionCall(fn, agentIndex)
-            if (fn.name === 'navigate_to_screen') {
-              navigated = true
+            await processFunctionCall(fn, agentIndex)
+            if (INTERACTION_TOOLS.has(fn.name)) {
+              interacted = true
             }
           }
         }
 
         steps++
 
-        // If persona navigated, add a delay for the walk animation then continue
-        if (navigated) {
-          await sleep(randomBetween(3000, 5000))
-          // Re-seat the persona at a work desk for the next screen
-          sceneRef.current?.setNpcWorking(agentIndex, true)
+        // After simulator interactions, wait for the UI to settle
+        if (interacted) {
+          await sleep(randomBetween(1500, 3000))
         } else {
-          // Small delay between reactions on the same screen
           await sleep(randomBetween(2000, 4000))
-        }
-
-        // Check if we've reached the last screen (dashboard has no next screens)
-        const latestScreenId = useAgencyStore.getState().personaScreens[agentIndex]
-        if (latestScreenId === 'dashboard' && !navigated) {
-          // Persona has finished exploring
-          break
         }
       }
 
@@ -113,7 +129,7 @@ export function useAgencyOrchestrator() {
       }
     } catch (err) {
       if ((err as DOMException)?.name !== 'AbortError') {
-        console.error(`[Sandbox] Persona ${agentIndex} exploration error:`, err)
+        console.error(`[Lab] Persona ${agentIndex} exploration error:`, err)
       }
     } finally {
       runningAgents.current.delete(agentIndex)
@@ -164,7 +180,7 @@ export function useAgencyOrchestrator() {
       return response.text || null
     } catch (err) {
       if ((err as DOMException)?.name !== 'AbortError') {
-        console.error('[Sandbox] Persona chat error:', err)
+        console.error('[Lab] Persona chat error:', err)
       }
       return null
     }
@@ -178,7 +194,6 @@ export function useAgencyOrchestrator() {
 
     // Watch for phase changes to start simulation
     const unsub = useAgencyStore.subscribe((s, prev) => {
-      // When phase transitions to 'working', start persona exploration
       if (s.phase === 'working' && prev.phase === 'idle') {
         startSimulation()
       }

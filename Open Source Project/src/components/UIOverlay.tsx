@@ -154,6 +154,10 @@ const UIOverlay: React.FC = () => {
                         {selectedAgent.role}
                       </span>
                       <span className="text-[10px] font-medium uppercase tracking-widest text-white/40">·</span>
+                      <span className="text-[10px] font-medium uppercase tracking-widest text-white/60">
+                        {selectedAgent.department}
+                      </span>
+                      <span className="text-[10px] font-medium uppercase tracking-widest text-white/40">·</span>
                       <span className={`text-[10px] font-bold uppercase tracking-widest ${label.className}`}>
                         {label.text}
                       </span>
@@ -190,6 +194,10 @@ const UIOverlay: React.FC = () => {
                     <>
                       <span className="text-[10px] font-black uppercase tracking-widest text-white">
                         {hoveredAgent.role}
+                      </span>
+                      <span className="text-[10px] font-medium uppercase tracking-widest text-white/40">·</span>
+                      <span className="text-[10px] font-medium uppercase tracking-widest text-white/60">
+                        {hoveredAgent.department}
                       </span>
                       <span className="text-[10px] font-medium uppercase tracking-widest text-white/40">·</span>
                       <span className={`text-[10px] font-bold uppercase tracking-widest ${label.className}`}>

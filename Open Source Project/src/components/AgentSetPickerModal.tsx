@@ -62,18 +62,19 @@ const AgentSetCard: React.FC<{
       <p className="text-[10px] text-zinc-500 leading-relaxed mb-3">{set.companyDescription}</p>
 
       {/* Agent role chips */}
-      <div className="flex flex-wrap gap-1">
+      <div className="flex flex-wrap gap-1.5">
         {npcAgents.map((agent) => (
           <span
             key={agent.index}
-            className="flex items-center gap-1 px-2 py-0.5 rounded-full border text-[9px] font-bold uppercase tracking-wide"
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[9px] font-bold tracking-wide"
             style={{ borderColor: `${agent.color}40`, color: agent.color, backgroundColor: `${agent.color}10` }}
           >
             <span
               className="w-1.5 h-1.5 rounded-full shrink-0"
               style={{ backgroundColor: agent.color }}
             />
-            {agent.role}
+            <span className="uppercase">{agent.role}</span>
+            <span className="text-zinc-400 font-medium normal-case">{agent.department}</span>
           </span>
         ))}
       </div>
@@ -148,9 +149,9 @@ const AgentSetPickerModal: React.FC<AgentSetPickerModalProps> = ({
                 </button>
               </div>
 
-              <h3 className="text-2xl font-black text-zinc-900 mb-1 leading-tight">Choose Your Team</h3>
+              <h3 className="text-2xl font-black text-zinc-900 mb-1 leading-tight">Choose Your Personas</h3>
               <p className="text-sm text-zinc-500 leading-relaxed">
-                Pick the company you want to simulate. This will reset any active project.
+                Pick the persona set for your feedback session. This will reset any active project.
               </p>
 
               {/* Warning banner if project is active */}
@@ -158,7 +159,7 @@ const AgentSetPickerModal: React.FC<AgentSetPickerModalProps> = ({
                 <div className="mt-4 flex items-center gap-2.5 px-4 py-3 bg-amber-50 border border-amber-100 rounded-xl">
                   <AlertTriangle size={14} className="text-amber-500 shrink-0" />
                   <p className="text-[11px] font-medium text-amber-700">
-                    Switching teams will clear the current brief, all tasks, logs, and conversation histories.
+                    Switching persona sets will clear all feedback, logs, and conversation histories.
                   </p>
                 </div>
               )}

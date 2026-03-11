@@ -52,7 +52,7 @@ interface AgencyState {
   // ── Tasks ────────────────────────────────────────────────────
   tasks: Task[]
 
-  // ── Feedback Sandbox ──────────────────────────────────────────
+  // ── Feedback Lab ──────────────────────────────────────────
   feedbackItems: FeedbackItem[]
   personaScreens: Record<number, string>
 
@@ -89,7 +89,7 @@ interface AgencyState {
   updateTaskStatus: (taskId: string, status: TaskStatus) => void;
   setTaskOutput: (taskId: string, output: string) => void;
 
-  // ── Actions — Feedback Sandbox ────────────────────────────────
+  // ── Actions — Feedback Lab ────────────────────────────────
   addFeedbackItem: (item: Omit<FeedbackItem, 'id' | 'timestamp'>) => FeedbackItem;
   setPersonaScreen: (agentIndex: number, screenId: string) => void;
 
@@ -213,7 +213,7 @@ export const useAgencyStore = create<AgencyState>()(
           ),
         })),
 
-      // ── Feedback Sandbox actions ──────────────────────────────
+      // ── Feedback Lab actions ──────────────────────────────
       addFeedbackItem: (item) => {
         const newItem: FeedbackItem = {
           ...item,

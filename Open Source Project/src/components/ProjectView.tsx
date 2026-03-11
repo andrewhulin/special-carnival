@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAgencyStore } from '../store/agencyStore';
 import { RefreshCcw, Play, Sparkles } from 'lucide-react';
 import ResetModal from './ResetModal';
+import AgentSetPickerModal from './AgentSetPickerModal';
 import { useSceneManager } from '../three/SceneContext';
 import { abortAllCalls } from '../services/agencyService';
 
@@ -14,7 +15,15 @@ const ProjectView: React.FC = () => {
     setPhase,
   } = useAgencyStore();
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
+  const [isPickerOpen, setIsPickerOpen] = useState(false);
   const scene = useSceneManager();
+
+  // Auto-open persona picker on first load
+  useEffect(() => {
+    if (phase === 'idle' && actionLog.length === 0) {
+      setIsPickerOpen(true);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const hasLogs = actionLog.length > 0;
 
@@ -33,7 +42,7 @@ const ProjectView: React.FC = () => {
     <div className="flex flex-col h-full overflow-y-auto p-6 bg-white/50">
       <div className="mb-6">
         <div className="flex items-center justify-between mb-2">
-          <h2 className="text-xl font-black text-zinc-900 leading-tight">Ash Feedback Sandbox</h2>
+          <h2 className="text-xl font-black text-zinc-900 leading-tight">Ash Feedback Lab</h2>
           <div className="flex items-center gap-2">
             <div className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 ${
               phase === 'working' ? 'bg-indigo-500 text-white' :
@@ -117,6 +126,12 @@ const ProjectView: React.FC = () => {
         isOpen={isResetModalOpen}
         onClose={() => setIsResetModalOpen(false)}
         onConfirm={handleResetConfirm}
+      />
+
+      <AgentSetPickerModal
+        isOpen={isPickerOpen}
+        onClose={() => setIsPickerOpen(false)}
+        hasActiveProject={hasLogs}
       />
     </div>
   );

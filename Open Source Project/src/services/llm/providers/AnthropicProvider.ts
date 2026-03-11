@@ -1,4 +1,4 @@
-import { LLMProvider, LLMMessage, LLMToolDefinition, LLMResponse, LLMToolCall } from '../types';
+import { LLMProvider, LLMMessage, LLMToolDefinition, LLMResponse, LLMToolCall, LLMContent } from '../types';
 
 /**
  * Anthropic Claude provider using the Messages API via fetch.
@@ -80,8 +80,9 @@ export class AnthropicProvider implements LLMProvider {
         // Assistant messages with tool_calls → Anthropic content blocks
         if (m.role === 'assistant' && m.tool_calls?.length) {
           const content: Array<Record<string, unknown>> = [];
-          if (m.content) {
-            content.push({ type: 'text', text: m.content });
+          const textContent = typeof m.content === 'string' ? m.content : '';
+          if (textContent) {
+            content.push({ type: 'text', text: textContent });
           }
           for (const tc of m.tool_calls) {
             content.push({
@@ -94,12 +95,32 @@ export class AnthropicProvider implements LLMProvider {
           return { role: 'assistant', content };
         }
 
-        // Regular messages
+        // Regular messages — handle both string and content block arrays (vision)
         return {
           role: m.role === 'assistant' ? 'assistant' : 'user',
-          content: m.content,
+          content: this.mapContent(m.content),
         };
       });
+  }
+
+  /** Convert LLMContent (string or block array) to Anthropic format. */
+  private mapContent(content: LLMContent): unknown {
+    if (typeof content === 'string') return content;
+    // Content block array — map to Anthropic format
+    return content.map(block => {
+      if (block.type === 'text') return { type: 'text', text: block.text };
+      if (block.type === 'image') {
+        return {
+          type: 'image',
+          source: {
+            type: 'base64',
+            media_type: block.source.media_type,
+            data: block.source.data,
+          },
+        };
+      }
+      return block;
+    });
   }
 
   private mapTools(tools: LLMToolDefinition[]): Array<Record<string, unknown>> {

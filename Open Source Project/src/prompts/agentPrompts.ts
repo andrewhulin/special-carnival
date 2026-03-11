@@ -1,6 +1,6 @@
 import { getActiveAgentSet } from '../store/agencyStore'
 import { useAgencyStore } from '../store/agencyStore'
-import { PERSONA_BACKSTORIES, PERSONA_AGES } from '../data/agents'
+// backstory and age are now on AgentData directly
 import { getScreen, APP_SCREENS } from '../data/appScreens'
 import type { FeedbackItem } from '../types'
 
@@ -10,8 +10,8 @@ export function buildSystemPrompt(agentIndex: number): string {
   const agent = agents.find(a => a.index === agentIndex)
   if (!agent) return ''
 
-  const backstory = PERSONA_BACKSTORIES[agentIndex] || ''
-  const age = PERSONA_AGES[agentIndex] || 30
+  const backstory = agent.backstory || ''
+  const age = agent.age || 30
 
   // Get current screen for this persona
   const store = useAgencyStore.getState()
@@ -61,7 +61,9 @@ export function buildSystemPrompt(agentIndex: number): string {
     `- think_aloud: share what you're thinking (shows as thought bubble)`,
     `- express_emotion: show how this screen makes you feel`,
     `- give_feedback: share your honest opinion as ${agent.role}`,
-    `- navigate_to_screen: move to the next screen when you're ready`,
+    `- tap_screen: tap a UI element at specific coordinates`,
+    `- type_text: type text into a focused input field`,
+    `- scroll: scroll up or down to see more content`,
     '',
     `Be specific. Don't say "this is confusing." Say WHY it's confusing for someone like you.`,
     `Reference your life, your experiences, your preferences.`,
@@ -72,9 +74,9 @@ export function buildSystemPrompt(agentIndex: number): string {
     '',
     `IMPORTANT:`,
     `- You MUST use at least one tool call in every response.`,
-    `- Start by reacting to the current screen (think_aloud or express_emotion).`,
+    `- Start by reacting to what you see (think_aloud or express_emotion).`,
     `- Then give specific feedback (give_feedback).`,
-    `- When you're done with this screen, navigate to the next one (navigate_to_screen).`,
+    `- To navigate, tap buttons/links you see on screen (tap_screen).`,
     `- Keep your text responses SHORT. Let the tool calls do the talking.`,
   ]
     .join('\n')
@@ -108,8 +110,8 @@ export function buildChatSystemPrompt(agentIndex: number): string {
   const agent = agents.find(a => a.index === agentIndex)
   if (!agent) return ''
 
-  const backstory = PERSONA_BACKSTORIES[agentIndex] || ''
-  const age = PERSONA_AGES[agentIndex] || 30
+  const backstory = agent.backstory || ''
+  const age = agent.age || 30
 
   // Get this persona's feedback history
   const store = useAgencyStore.getState()

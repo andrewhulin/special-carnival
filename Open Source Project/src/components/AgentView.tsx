@@ -1,6 +1,6 @@
 import React from 'react';
 import { useAgencyStore } from '../store/agencyStore';
-import { getAgentSet, PERSONA_BACKSTORIES } from '../data/agents';
+import { getAgentSet } from '../data/agents';
 import { getScreen } from '../data/appScreens';
 
 interface AgentViewProps {
@@ -22,7 +22,7 @@ const AgentView: React.FC<AgentViewProps> = ({ agentIndex }) => {
   const agent = agents.find(a => a.index === agentIndex);
   if (!agent) return null;
 
-  const backstory = PERSONA_BACKSTORIES[agentIndex] || '';
+  const backstory = agent.backstory || '';
   const currentScreenId = personaScreens[agentIndex];
   const currentScreen = currentScreenId ? getScreen(currentScreenId) : null;
   const myFeedback = feedbackItems.filter(f => f.personaIndex === agentIndex);

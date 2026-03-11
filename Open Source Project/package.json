@@ -1,12 +1,7 @@
 {
-  "name": "the-delegation",
-  "description": "What if you could stop prompting & start delegating to a team of AI agents in a living 3D office?",
+  "name": "ash-feedback-lab",
+  "description": "AI personas explore the Ash app and give design feedback in a 3D sandbox",
   "license": "MIT",
-  "author": "Arturo Paracuellos <arturo@unboring.net>",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/arturitu/the-delegation.git"
-  },
   "private": true,
   "version": "0.1.0",
   "type": "module",
@@ -18,7 +13,7 @@
     "lint": "tsc --noEmit",
     "ios:simulator": "open -a Simulator",
     "ios:boot": "xcrun simctl boot \"iPhone 16 Pro\" 2>/dev/null; open -a Simulator",
-    "ios:safari": "xcrun simctl openurl booted http://localhost:3000/the-delegation/"
+    "ios:safari": "xcrun simctl openurl booted http://localhost:3000/"
   },
   "dependencies": {
     "@google/genai": "^1.29.0",
